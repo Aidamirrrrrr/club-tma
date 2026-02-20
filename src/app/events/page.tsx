@@ -132,43 +132,53 @@ export default function EventsPage() {
           {events.map((event, index) => (
             <Link key={event.id} href={`/events/${event.id}`}>
               <Card
-                className={`card-interactive animate-slide-up stagger-${Math.min(index + 1, 10)} flex flex-col gap-2.5 overflow-hidden`}
+                className={`card-interactive animate-slide-up stagger-${Math.min(index + 1, 10)} flex flex-col gap-2.5 overflow-hidden p-0`}
               >
                 {event.coverUrl && (
                   <img
                     src={event.coverUrl}
                     alt={event.title}
-                    className="-mx-4 -mt-4 mb-1 h-48 w-[calc(100%+2rem)] rounded-t-2xl object-cover"
+                    className="h-48 w-full object-cover"
                   />
                 )}
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold leading-tight tracking-tight">
-                    {event.title}
-                  </h3>
-                  <Badge variant={statusVariants[event.status]}>
-                    {statusLabels[event.status] || event.status}
-                  </Badge>
-                </div>
-                <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                  {event.description}
-                </p>
-                <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-                  <span className="flex items-center gap-1.5">
-                    <CalendarDays className="h-3 w-3 text-primary/70" />
-                    {formatDate(event.date)}
-                    {event.time && `, ${event.time}`}
-                  </span>
-                  {event.location && (
+                <div className="flex flex-col gap-2.5 px-4 pb-4 pt-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold leading-tight tracking-tight">
+                      {event.title}
+                    </h3>
+                    <Badge variant={statusVariants[event.status]}>
+                      {statusLabels[event.status] || event.status}
+                    </Badge>
+                  </div>
+                  <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                    {event.description}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
                     <span className="flex items-center gap-1.5">
-                      <MapPin className="h-3 w-3 text-primary/70" />
-                      {event.location}
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                        <CalendarDays className="h-3 w-3 text-primary-foreground" />
+                      </span>
+                      {formatDate(event.date)}
+                      {event.time && `, ${event.time}`}
                     </span>
-                  )}
-                  <span className="flex items-center gap-1.5">
-                    <Users className="h-3 w-3 text-primary/70" />
-                    {event.participantCount}
-                    {event.maxParticipants ? ` / ${event.maxParticipants}` : ""}
-                  </span>
+                    {event.location && (
+                      <span className="flex items-center gap-1.5">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                          <MapPin className="h-3 w-3 text-primary-foreground" />
+                        </span>
+                        {event.location}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1.5">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                        <Users className="h-3 w-3 text-primary-foreground" />
+                      </span>
+                      {event.participantCount}
+                      {event.maxParticipants
+                        ? ` / ${event.maxParticipants}`
+                        : ""}
+                    </span>
+                  </div>
                 </div>
               </Card>
             </Link>

@@ -190,12 +190,16 @@ export default function HomePage() {
                   </p>
                   <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                     <span className="flex items-center gap-1.5">
-                      <CalendarDays className="h-3 w-3 text-primary/70" />
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                        <CalendarDays className="h-3 w-3 text-primary-foreground" />
+                      </span>
                       {formatDate(event.date)}
                       {event.time && `, ${event.time}`}
                     </span>
                     <span className="flex items-center gap-1.5">
-                      <Users className="h-3 w-3 text-primary/70" />
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                        <Users className="h-3 w-3 text-primary-foreground" />
+                      </span>
                       {event.participantCount}
                     </span>
                   </div>

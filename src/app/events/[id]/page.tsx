@@ -161,11 +161,13 @@ export default function EventDetailPage() {
   return (
     <div className="flex flex-col gap-5 pb-6">
       {event.coverUrl && (
-        <img
-          src={event.coverUrl}
-          alt={event.title}
-          className="animate-scale-in -mx-4 -mt-16 h-64 w-[calc(100%+2rem)] rounded-b-3xl object-cover shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)] lg:-mt-8"
-        />
+        <div className="animate-scale-in -mx-4 -mt-28 lg:-mt-8">
+          <img
+            src={event.coverUrl}
+            alt={event.title}
+            className="h-72 w-full rounded-b-3xl object-cover shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]"
+          />
+        </div>
       )}
 
       <div className="animate-fade-in flex items-start justify-between gap-2">
