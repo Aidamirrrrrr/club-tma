@@ -87,6 +87,26 @@ function withTimeout<T>(
   ]);
 }
 
+/** Parse user from raw initData string on the client side. */
+function parseUserFromInitData(raw: string): TelegramUser | null {
+  try {
+    const params = new URLSearchParams(raw);
+    const userJson = params.get("user");
+    if (!userJson) return null;
+    const u = JSON.parse(userJson);
+    return {
+      id: u.id,
+      first_name: u.first_name,
+      last_name: u.last_name ?? undefined,
+      username: u.username ?? undefined,
+      photo_url: u.photo_url ?? undefined,
+      language_code: u.language_code ?? undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function TelegramProvider({ children }: { children: ReactNode }) {
   const [tgUser, setTgUser] = useState<TelegramUser | null>(null);
   const [dbUser, setDbUser] = useState<User | null>(null);
@@ -199,36 +219,57 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
             setRawInitData(initDataRaw);
           }
 
-          const tgAppUser = initDataUser();
+          // Try SDK signal first, then parse raw initData manually
+          let user: TelegramUser | null = null;
+          try {
+            const tgAppUser = initDataUser();
+            if (tgAppUser) {
+              user = {
+                id: tgAppUser.id,
+                first_name: tgAppUser.first_name,
+                last_name: tgAppUser.last_name ?? undefined,
+                username: tgAppUser.username ?? undefined,
+                photo_url: tgAppUser.photo_url ?? undefined,
+                language_code: tgAppUser.language_code ?? undefined,
+              };
+            }
+          } catch {
+            // initDataUser signal not ready
+          }
 
-          if (tgAppUser) {
-            const user: TelegramUser = {
-              id: tgAppUser.id,
-              first_name: tgAppUser.first_name,
-              last_name: tgAppUser.last_name ?? undefined,
-              username: tgAppUser.username ?? undefined,
-              photo_url: tgAppUser.photo_url ?? undefined,
-              language_code: tgAppUser.language_code ?? undefined,
-            };
+          // Fallback: parse user directly from raw initData
+          if (!user && initDataRaw) {
+            user = parseUserFromInitData(initDataRaw);
+          }
+
+          if (user) {
             setTgUser(user);
             await fetchOrCreateUser(user, initDataRaw);
+          } else if (process.env.NODE_ENV === "development") {
+            // Mock user ONLY in development
+            const mockUser = createMockUser();
+            setTgUser(mockUser);
+            await fetchOrCreateUser(mockUser);
           } else {
-            console.warn("No initDataUser found, using mock");
+            console.error("No Telegram user data available");
+          }
+        } catch (e) {
+          console.error("Auth flow error:", e);
+          if (process.env.NODE_ENV === "development") {
             const mockUser = createMockUser();
             setTgUser(mockUser);
             await fetchOrCreateUser(mockUser);
           }
-        } catch (e) {
-          console.error("Auth flow error:", e);
+        }
+      } else {
+        // SDK not available — only use mock in development
+        if (process.env.NODE_ENV === "development") {
           const mockUser = createMockUser();
           setTgUser(mockUser);
           await fetchOrCreateUser(mockUser);
+        } else {
+          console.error("TMA SDK failed to initialize");
         }
-      } else {
-        // Dev mode: SDK not available
-        const mockUser = createMockUser();
-        setTgUser(mockUser);
-        await fetchOrCreateUser(mockUser);
       }
 
       setIsLoading(false);
