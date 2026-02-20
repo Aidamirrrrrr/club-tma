@@ -74,6 +74,19 @@ function initTmaSDK(): boolean {
   }
 }
 
+/** Race a promise against a timeout — returns undefined on timeout. */
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+): Promise<T | undefined> {
+  return Promise.race([
+    promise,
+    new Promise<undefined>((resolve) =>
+      setTimeout(() => resolve(undefined), ms),
+    ),
+  ]);
+}
+
 export function TelegramProvider({ children }: { children: ReactNode }) {
   const [tgUser, setTgUser] = useState<TelegramUser | null>(null);
   const [dbUser, setDbUser] = useState<User | null>(null);
@@ -141,33 +154,41 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
           }
           miniApp.ready();
 
-          // Mount & expand viewport
-          if (mountViewport.isAvailable()) {
-            await mountViewport();
-          }
-          if (expandViewport.isAvailable()) {
-            expandViewport();
+          // Mount & expand viewport (with timeout to avoid hanging)
+          try {
+            if (mountViewport.isAvailable()) {
+              await withTimeout(mountViewport(), 2000);
+            }
+            if (expandViewport.isAvailable()) {
+              expandViewport();
+            }
+          } catch {
+            // Viewport mount failed, continue anyway
           }
 
-          // Request fullscreen
+          // Request fullscreen (with timeout)
           if (requestFullscreen.isAvailable()) {
             setHasFullscreen(true);
             try {
-              await requestFullscreen();
+              await withTimeout(requestFullscreen(), 2000);
             } catch {
               // Not supported in older versions
             }
           }
 
           // Read safe area insets from signals
-          const saTop =
-            (viewportSafeAreaInsetTop() ?? 0) +
-            (viewportContentSafeAreaInsetTop() ?? 0);
-          const saBottom =
-            (viewportSafeAreaInsetBottom() ?? 0) +
-            (viewportContentSafeAreaInsetBottom() ?? 0);
-          setSafeAreaTop(saTop);
-          setSafeAreaBottom(saBottom);
+          try {
+            const saTop =
+              (viewportSafeAreaInsetTop() ?? 0) +
+              (viewportContentSafeAreaInsetTop() ?? 0);
+            const saBottom =
+              (viewportSafeAreaInsetBottom() ?? 0) +
+              (viewportContentSafeAreaInsetBottom() ?? 0);
+            setSafeAreaTop(saTop);
+            setSafeAreaBottom(saBottom);
+          } catch {
+            // Safe area signals not available
+          }
 
           // Get raw init data for auth headers
           const initDataRaw = retrieveRawInitData();
