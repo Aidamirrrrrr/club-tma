@@ -1,19 +1,22 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "../src/db/schema";
+import { eq, and } from "drizzle-orm";
 
-const sqlite = new Database("./data/app.db");
-sqlite.pragma("journal_mode = WAL");
-sqlite.pragma("foreign_keys = ON");
-const db = drizzle(sqlite, { schema });
+const connectionString =
+  process.env.DATABASE_URL ??
+  "postgres://postgres:postgres@localhost:5432/club";
+
+const client = postgres(connectionString);
+const db = drizzle(client, { schema });
 
 async function seed() {
   console.log("🌱 Seeding database...");
 
   // Clear existing data
-  db.delete(schema.registrations).run();
-  db.delete(schema.events).run();
-  db.delete(schema.users).run();
+  await db.delete(schema.registrations);
+  await db.delete(schema.events);
+  await db.delete(schema.users);
   console.log("🗑️  Cleared old data");
 
   // ── Users ──
@@ -167,22 +170,15 @@ async function seed() {
   // Insert users
   const insertedUsers: schema.User[] = [];
   for (const u of usersData) {
-    const existing = db
-      .select()
-      .from(schema.users)
-      .where(require("drizzle-orm").eq(schema.users.telegramId, u.telegramId))
-      .get();
-    if (!existing) {
-      db.insert(schema.users).values(u).run();
-      const inserted = db
-        .select()
-        .from(schema.users)
-        .where(require("drizzle-orm").eq(schema.users.telegramId, u.telegramId))
-        .get();
-      if (inserted) insertedUsers.push(inserted);
-    } else {
-      insertedUsers.push(existing);
-    }
+    const [result] = await db
+      .insert(schema.users)
+      .values(u)
+      .onConflictDoUpdate({
+        target: schema.users.telegramId,
+        set: { firstName: u.firstName },
+      })
+      .returning();
+    if (result) insertedUsers.push(result);
   }
   console.log(`✅ ${insertedUsers.length} users ready`);
 
@@ -322,38 +318,30 @@ async function seed() {
 
   const insertedEvents: schema.Event[] = [];
   for (const e of eventsData) {
-    const existing = db
-      .select()
-      .from(schema.events)
-      .where(require("drizzle-orm").eq(schema.events.title, e.title))
-      .get();
-    if (!existing) {
-      db.insert(schema.events).values(e).run();
-      const inserted = db
-        .select()
-        .from(schema.events)
-        .where(require("drizzle-orm").eq(schema.events.title, e.title))
-        .get();
-      if (inserted) insertedEvents.push(inserted);
-    } else {
-      insertedEvents.push(existing);
-    }
+    const [result] = await db
+      .insert(schema.events)
+      .values(e)
+      .onConflictDoUpdate({
+        target: schema.events.title,
+        set: { title: e.title },
+      })
+      .returning();
+    if (result) insertedEvents.push(result);
   }
   console.log(`✅ ${insertedEvents.length} events ready`);
 
   // ── Registrations ──
-  // Map: [eventIndex] -> [userIndices]
   const registrationMap: Record<number, number[]> = {
-    0: [0, 2, 3, 4, 6, 7, 9, 10], // Хайкинг — 8 чел
-    1: [1, 3, 5, 7, 8, 11], // Кулинарный МК — 6 чел
-    2: [0, 2, 7, 9, 10, 11], // Фотопрогулка — 6 чел
-    3: [1, 3, 5, 8, 9], // Йога — 5 чел
-    4: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], // Настолки — все 12
-    5: [0, 2, 4, 6, 10], // Футбол (completed) — 5
-    6: [0, 1, 3, 5, 7, 8, 9, 11], // Лекция (completed) — 8
-    7: [0, 2, 10], // Джем (completed) — 3
-    8: [1, 3, 7, 9, 11], // Книжный клуб — 5
-    9: [0, 1, 2, 3, 4, 5], // Субботник — 6
+    0: [0, 2, 3, 4, 6, 7, 9, 10],
+    1: [1, 3, 5, 7, 8, 11],
+    2: [0, 2, 7, 9, 10, 11],
+    3: [1, 3, 5, 8, 9],
+    4: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
+    5: [0, 2, 4, 6, 10],
+    6: [0, 1, 3, 5, 7, 8, 9, 11],
+    7: [0, 2, 10],
+    8: [1, 3, 7, 9, 11],
+    9: [0, 1, 2, 3, 4, 5],
   };
 
   let regCount = 0;
@@ -363,32 +351,21 @@ async function seed() {
     for (const userIdx of userIdxs) {
       const user = insertedUsers[userIdx];
       if (!user) continue;
-      const existing = db
-        .select()
-        .from(schema.registrations)
-        .where(
-          require("drizzle-orm").and(
-            require("drizzle-orm").eq(schema.registrations.userId, user.id),
-            require("drizzle-orm").eq(schema.registrations.eventId, event.id),
-          ),
-        )
-        .get();
-      if (!existing) {
-        db.insert(schema.registrations)
-          .values({ userId: user.id, eventId: event.id })
-          .run();
-        regCount++;
-      }
+      await db
+        .insert(schema.registrations)
+        .values({ userId: user.id, eventId: event.id })
+        .onConflictDoNothing();
+      regCount++;
     }
   }
-  console.log(`✅ ${regCount} new registrations created`);
+  console.log(`✅ ${regCount} registrations created`);
 
   console.log("\n🎉 Seed complete!");
   console.log(`   ${insertedUsers.length} users`);
   console.log(`   ${insertedEvents.length} events`);
   console.log(`   ${regCount} registrations`);
 
-  sqlite.close();
+  await client.end();
 }
 
 seed().catch((err) => {

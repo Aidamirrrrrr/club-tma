@@ -1,8 +1,15 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import {
+  pgTable,
+  text,
+  integer,
+  boolean,
+  serial,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   telegramId: text("telegram_id").notNull().unique(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").default(""),
@@ -12,17 +19,13 @@ export const users = sqliteTable("users", {
   instagram: text("instagram").default(""),
   telegram: text("telegram").default(""),
   phone: text("phone").default(""),
-  role: text("role", { enum: ["user", "admin"] })
-    .notNull()
-    .default("user"),
-  blocked: integer("blocked", { mode: "boolean" }).notNull().default(false),
-  createdAt: text("created_at")
-    .notNull()
-    .$defaultFn(() => new Date().toISOString()),
+  role: text("role").$type<"user" | "admin">().notNull().default("user"),
+  blocked: boolean("blocked").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const events = sqliteTable("events", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const events = pgTable("events", {
+  id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull().default(""),
   date: text("date").notNull(),
@@ -30,28 +33,23 @@ export const events = sqliteTable("events", {
   location: text("location").notNull().default(""),
   coverUrl: text("cover_url").default(""),
   maxParticipants: integer("max_participants").default(0),
-  status: text("status", {
-    enum: ["open", "closed", "cancelled", "completed"],
-  })
+  status: text("status")
+    .$type<"open" | "closed" | "cancelled" | "completed">()
     .notNull()
     .default("open"),
   createdBy: integer("created_by").references(() => users.id),
-  createdAt: text("created_at")
-    .notNull()
-    .$defaultFn(() => new Date().toISOString()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const registrations = sqliteTable("registrations", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const registrations = pgTable("registrations", {
+  id: serial("id").primaryKey(),
   userId: integer("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   eventId: integer("event_id")
     .notNull()
     .references(() => events.id, { onDelete: "cascade" }),
-  createdAt: text("created_at")
-    .notNull()
-    .$defaultFn(() => new Date().toISOString()),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
 // Relations
@@ -79,9 +77,9 @@ export const registrationsRelations = relations(registrations, ({ one }) => ({
   }),
 }));
 
-// Types
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
 export type Registration = typeof registrations.$inferSelect;
+export type NewRegistration = typeof registrations.$inferInsert;

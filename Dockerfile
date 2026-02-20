@@ -2,7 +2,6 @@ FROM node:22-alpine AS base
 
 # --- Dependencies ---
 FROM base AS deps
-RUN apk add --no-cache python3 make g++
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -33,11 +32,6 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-
-# Copy seeded database
-COPY --from=builder /app/data ./data
-
-RUN chown -R nextjs:nodejs /app/data
 
 USER nextjs
 
