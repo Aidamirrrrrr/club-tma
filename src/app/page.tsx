@@ -8,6 +8,7 @@ import {
   ChevronRight,
   TrendingUp,
   UserCheck,
+  MapPin,
 } from "lucide-react";
 import { useTelegram } from "@/components/telegram-provider";
 import { Card } from "@/components/ui/card";
@@ -22,12 +23,32 @@ import { PageLoader } from "@/components/ui/spinner";
 import { format, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 
+const statusLabels: Record<string, string> = {
+  open: "Открыта регистрация",
+  closed: "Закрыта",
+  cancelled: "Отменено",
+  completed: "Завершено",
+};
+
+const statusVariants: Record<
+  string,
+  "success" | "warning" | "danger" | "default"
+> = {
+  open: "success",
+  closed: "warning",
+  cancelled: "danger",
+  completed: "default",
+};
+
 interface EventPreview {
   id: number;
   title: string;
   date: string;
   time: string;
+  location: string;
   description: string;
+  coverUrl: string | null;
+  maxParticipants: number | null;
   participantCount: number;
   status: string;
 }
@@ -177,35 +198,53 @@ export default function HomePage() {
                 className="flex"
               >
                 <Card
-                  className={`card-interactive animate-slide-up stagger-${Math.min(index + 6, 10)} flex w-full flex-col gap-2.5`}
+                  className={`card-interactive animate-slide-up stagger-${Math.min(index + 6, 10)} flex w-full flex-col gap-2.5 overflow-hidden p-0`}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <h3 className="font-semibold leading-tight tracking-tight">
-                      {event.title}
-                    </h3>
-                    <Badge
-                      variant={event.status === "open" ? "success" : "warning"}
-                    >
-                      {event.status === "open" ? "Открыто" : "Закрыто"}
-                    </Badge>
-                  </div>
-                  <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                    {event.description}
-                  </p>
-                  <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
-                        <CalendarDays className="h-3 w-3 text-primary-foreground" />
+                  {event.coverUrl && (
+                    <img
+                      src={event.coverUrl}
+                      alt={event.title}
+                      className="h-48 w-full object-cover"
+                    />
+                  )}
+                  <div className="flex flex-col gap-2.5 px-4 pb-4 pt-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-semibold leading-tight tracking-tight">
+                        {event.title}
+                      </h3>
+                      <Badge variant={statusVariants[event.status]}>
+                        {statusLabels[event.status] || event.status}
+                      </Badge>
+                    </div>
+                    <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                      {event.description}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                      <span className="flex items-center gap-1.5">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                          <CalendarDays className="h-3 w-3 text-primary-foreground" />
+                        </span>
+                        {formatDate(event.date)}
+                        {event.time && `, ${event.time}`}
                       </span>
-                      {formatDate(event.date)}
-                      {event.time && `, ${event.time}`}
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
-                        <Users className="h-3 w-3 text-primary-foreground" />
+                      {event.location && (
+                        <span className="flex items-center gap-1.5">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                            <MapPin className="h-3 w-3 text-primary-foreground" />
+                          </span>
+                          {event.location}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1.5">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                          <Users className="h-3 w-3 text-primary-foreground" />
+                        </span>
+                        {event.participantCount}
+                        {event.maxParticipants
+                          ? ` / ${event.maxParticipants}`
+                          : ""}
                       </span>
-                      {event.participantCount}
-                    </span>
+                    </div>
                   </div>
                 </Card>
               </Link>

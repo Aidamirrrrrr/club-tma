@@ -11,6 +11,7 @@ import {
   Share2,
   UserCheck,
   UserX,
+  Star,
 } from "lucide-react";
 import { useTelegram } from "@/components/telegram-provider";
 import { Card } from "@/components/ui/card";
@@ -279,36 +280,56 @@ export default function EventDetailPage() {
             </p>
           ) : (
             <div className="flex flex-col gap-2">
-              {event.participants.map((p, index) => (
-                <Link key={p.id} href={`/members/${p.id}`}>
-                  <Card
-                    className={`card-interactive animate-slide-in-right flex items-center gap-3 p-3`}
-                    style={{ animationDelay: `${0.05 * (index + 1)}s` }}
-                  >
-                    <Avatar size="sm">
-                      {p.photoUrl && (
-                        <AvatarImage
-                          src={p.photoUrl}
-                          alt={`${p.firstName} ${p.lastName}`}
-                        />
-                      )}
-                      <AvatarFallback>
-                        {getInitials(p.firstName, p.lastName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-medium">
-                        {p.firstName} {p.lastName}
-                      </p>
-                      {p.username && (
-                        <p className="text-[11px] text-muted-foreground">
-                          @{p.username}
-                        </p>
-                      )}
-                    </div>
-                  </Card>
-                </Link>
-              ))}
+              {event.participants.map((p, index) => {
+                const isOrganizer = p.id === event.createdBy;
+                return (
+                  <Link key={p.id} href={`/members/${p.id}`}>
+                    <Card
+                      className={`card-interactive animate-slide-in-right flex items-center gap-3 p-3${isOrganizer ? " ring-1 ring-primary/30" : ""}`}
+                      style={{ animationDelay: `${0.05 * (index + 1)}s` }}
+                    >
+                      <div className="relative">
+                        <Avatar size="sm">
+                          {p.photoUrl && (
+                            <AvatarImage
+                              src={p.photoUrl}
+                              alt={`${p.firstName} ${p.lastName}`}
+                            />
+                          )}
+                          <AvatarFallback>
+                            {getInitials(p.firstName, p.lastName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        {isOrganizer && (
+                          <span className="absolute -right-0.5 -bottom-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-card">
+                            <Star className="h-2.5 w-2.5 fill-current" />
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium">
+                            {p.firstName} {p.lastName}
+                          </p>
+                          {isOrganizer && (
+                            <Badge
+                              variant="success"
+                              className="text-[10px] px-1.5 py-0"
+                            >
+                              Организатор
+                            </Badge>
+                          )}
+                        </div>
+                        {p.username && (
+                          <p className="text-[11px] text-muted-foreground">
+                            @{p.username}
+                          </p>
+                        )}
+                      </div>
+                    </Card>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </section>

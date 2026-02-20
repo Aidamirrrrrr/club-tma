@@ -361,7 +361,7 @@ export default function ProfilePage() {
               </h2>
               {profile.role === "admin" && (
                 <Badge variant="success" className="mt-1.5">
-                  Администратор
+                  Организатор
                 </Badge>
               )}
             </div>

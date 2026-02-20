@@ -168,7 +168,7 @@ export default function MemberDetailPage() {
             )}
             <div className="mt-2 flex items-center justify-center gap-2">
               {member.role === "admin" && (
-                <Badge variant="success">Администратор</Badge>
+                <Badge variant="success">Организатор</Badge>
               )}
               {member.blocked && <Badge variant="danger">Заблокирован</Badge>}
             </div>

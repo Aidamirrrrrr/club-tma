@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { events } from "@/db/schema";
-import { asc } from "drizzle-orm";
+import { events, users } from "@/db/schema";
+import { asc, eq } from "drizzle-orm";
 import { requireAdmin } from "@/lib/telegram";
 import { notifyNewEvent } from "@/lib/notifications";
 
@@ -10,10 +10,15 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get("filter") || "upcoming";
     const search = searchParams.get("search") || "";
+    const telegramId = searchParams.get("telegramId") || "";
 
     const allEvents = await db.query.events.findMany({
       with: {
-        registrations: true,
+        registrations: {
+          with: {
+            user: true,
+          },
+        },
       },
       orderBy: [asc(events.date)],
     });
@@ -31,9 +36,14 @@ export async function GET(request: Request) {
       createdBy: e.createdBy,
       createdAt: e.createdAt,
       participantCount: e.registrations.length,
+      registrations: e.registrations,
     }));
 
-    if (filter === "upcoming") {
+    if (filter === "mine" && telegramId) {
+      filtered = filtered.filter((e) =>
+        e.registrations.some((r: any) => r.user?.telegramId === telegramId),
+      );
+    } else if (filter === "upcoming") {
       filtered = filtered.filter(
         (e) => e.status !== "completed" && e.status !== "cancelled",
       );
@@ -43,6 +53,7 @@ export async function GET(request: Request) {
       );
     }
 
+    // Strip registrations details from response
     if (search) {
       const q = search.toLowerCase();
       filtered = filtered.filter(
@@ -52,7 +63,9 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json(filtered);
+    const result = filtered.map(({ registrations, ...rest }) => rest);
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Events fetch error:", error);
     return NextResponse.json(

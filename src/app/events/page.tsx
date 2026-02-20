@@ -45,25 +45,29 @@ const statusVariants: Record<
 };
 
 export default function EventsPage() {
-  const { isAdmin, isLoading } = useTelegram();
+  const { isAdmin, isLoading, tgUser } = useTelegram();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [filter, setFilter] = useState<"upcoming" | "past">("upcoming");
+  const [filter, setFilter] = useState<"upcoming" | "past" | "mine">(
+    "upcoming",
+  );
   const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     setLoadingData(true);
     try {
-      const res = await fetch(
-        `/api/events?filter=${filter}&search=${encodeURIComponent(search)}`,
-      );
+      const params = new URLSearchParams({ filter, search });
+      if (filter === "mine" && tgUser?.id) {
+        params.set("telegramId", String(tgUser.id));
+      }
+      const res = await fetch(`/api/events?${params.toString()}`);
       if (res.ok) setEvents(await res.json());
     } catch (e) {
       console.error(e);
     } finally {
       setLoadingData(false);
     }
-  }, [filter, search]);
+  }, [filter, search, tgUser]);
 
   useEffect(() => {
     load();
@@ -101,11 +105,12 @@ export default function EventsPage() {
       <Tabs
         className="animate-slide-up stagger-2"
         value={filter}
-        onValueChange={(v) => setFilter(v as "upcoming" | "past")}
+        onValueChange={(v) => setFilter(v as "upcoming" | "past" | "mine")}
       >
         <TabsList>
           <TabsTrigger value="upcoming">Предстоящие</TabsTrigger>
           <TabsTrigger value="past">Прошедшие</TabsTrigger>
+          <TabsTrigger value="mine">Мои</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -121,9 +126,11 @@ export default function EventsPage() {
           <EmptyState
             icon={CalendarDays}
             message={
-              filter === "upcoming"
-                ? "Нет предстоящих мероприятий"
-                : "Нет прошедших мероприятий"
+              filter === "mine"
+                ? "Вы не участвуете ни в одном мероприятии"
+                : filter === "upcoming"
+                  ? "Нет предстоящих мероприятий"
+                  : "Нет прошедших мероприятий"
             }
           />
         </Card>
