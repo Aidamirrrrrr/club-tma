@@ -42,13 +42,7 @@ export default function RootLayout({
           <TelegramBackButtonManager />
           <div className="flex min-h-screen">
             <DesktopSidebar />
-            <main
-              className="mx-auto w-full max-w-lg px-4 pt-[calc(env(safe-area-inset-top,0px)+1.5rem)] pb-24 lg:max-w-3xl lg:pt-8 lg:pb-8"
-              style={{
-                paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.5rem)",
-                paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 6rem)",
-              }}
-            >
+            <main className="mx-auto w-full max-w-lg px-4 pt-14 pb-28 lg:max-w-3xl lg:pt-8 lg:pb-8">
               {children}
             </main>
           </div>

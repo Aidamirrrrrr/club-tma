@@ -2,12 +2,13 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema";
 import { existsSync, mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { join } from "node:path";
 
-const DB_PATH = "./data/app.db";
+const DB_PATH =
+  process.env.DATABASE_URL ?? join(process.cwd(), "data", "app.db");
 
 // Ensure directory exists
-const dir = dirname(DB_PATH);
+const dir = join(process.cwd(), "data");
 if (!existsSync(dir)) {
   mkdirSync(dir, { recursive: true });
 }
