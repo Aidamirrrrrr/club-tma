@@ -1,65 +1,236 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  CalendarDays,
+  Users,
+  ChevronRight,
+  TrendingUp,
+  UserCheck,
+} from "lucide-react";
+import { useTelegram } from "@/components/telegram-provider";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  AnimatedCounter,
+  StatCardSkeleton,
+  EventCardSkeleton,
+  EmptyState,
+} from "@/components/ui/animated";
+import { PageLoader } from "@/components/ui/spinner";
+import { format, parseISO } from "date-fns";
+import { ru } from "date-fns/locale";
+
+interface EventPreview {
+  id: number;
+  title: string;
+  date: string;
+  time: string;
+  description: string;
+  participantCount: number;
+  status: string;
+}
+
+interface Stats {
+  totalUsers: number;
+  totalEvents: number;
+  completedEvents: number;
+  totalRegistrations: number;
+}
+
+export default function HomePage() {
+  const { dbUser, isLoading } = useTelegram();
+  const [events, setEvents] = useState<EventPreview[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loadingData, setLoadingData] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [eventsRes, statsRes] = await Promise.all([
+          fetch("/api/events?filter=upcoming"),
+          fetch("/api/stats"),
+        ]);
+        if (eventsRes.ok) {
+          const data = await eventsRes.json();
+          setEvents(data.slice(0, 5));
+        }
+        if (statsRes.ok) {
+          setStats(await statsRes.json());
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoadingData(false);
+      }
+    }
+    load();
+  }, []);
+
+  if (isLoading) return <PageLoader />;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex flex-col gap-7 pb-6">
+      {/* Hero welcome */}
+      <section className="animate-fade-in">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm">
+            <span className="text-lg font-bold text-primary-foreground">K</span>
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">
+              Привет{dbUser ? `, ${dbUser.firstName}` : ""}!
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Добро пожаловать в клуб
+            </p>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Сообщество единомышленников — участвуй в мероприятиях, знакомься с
+          участниками и будь в курсе событий клуба.
+        </p>
+      </section>
+
+      {/* Stats */}
+      {loadingData ? (
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+        </section>
+      ) : stats ? (
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <Card className="card-interactive animate-slide-up stagger-1 p-4">
+            <Users className="mb-2 h-5 w-5 text-primary animate-icon-bounce" />
+            <p className="text-2xl font-bold tracking-tight animate-number-pop stagger-1">
+              <AnimatedCounter value={stats.totalUsers} />
+            </p>
+            <p className="text-[11px] text-muted-foreground">Участников</p>
+          </Card>
+          <Card className="card-interactive animate-slide-up stagger-2 p-4">
+            <CalendarDays className="mb-2 h-5 w-5 text-primary animate-icon-bounce stagger-2" />
+            <p className="text-2xl font-bold tracking-tight animate-number-pop stagger-2">
+              <AnimatedCounter value={stats.totalEvents} />
+            </p>
+            <p className="text-[11px] text-muted-foreground">Мероприятий</p>
+          </Card>
+          <Card className="card-interactive animate-slide-up stagger-3 p-4">
+            <UserCheck className="mb-2 h-5 w-5 text-primary animate-icon-bounce stagger-3" />
+            <p className="text-2xl font-bold tracking-tight animate-number-pop stagger-3">
+              <AnimatedCounter value={stats.totalRegistrations} />
+            </p>
+            <p className="text-[11px] text-muted-foreground">Регистраций</p>
+          </Card>
+          <Card className="card-interactive animate-slide-up stagger-4 p-4">
+            <TrendingUp className="mb-2 h-5 w-5 text-primary animate-icon-bounce stagger-4" />
+            <p className="text-2xl font-bold tracking-tight animate-number-pop stagger-4">
+              <AnimatedCounter value={stats.completedEvents} />
+            </p>
+            <p className="text-[11px] text-muted-foreground">Проведено</p>
+          </Card>
+        </section>
+      ) : null}
+
+      {/* Upcoming events */}
+      <section className="animate-slide-up stagger-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-semibold tracking-tight">
+            Ближайшие события
+          </h2>
+          <Link
+            href="/events"
+            className="flex items-center gap-1 rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-foreground transition-colors hover:bg-primary/25"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            Все <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+
+        {loadingData ? (
+          <div className="flex flex-col gap-3">
+            <EventCardSkeleton />
+            <EventCardSkeleton />
+          </div>
+        ) : events.length === 0 ? (
+          <Card className="animate-scale-in">
+            <EmptyState
+              icon={CalendarDays}
+              message="Пока нет предстоящих мероприятий"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+          </Card>
+        ) : (
+          <div className="flex flex-col gap-3 md:grid md:grid-cols-2">
+            {events.map((event, index) => (
+              <Link key={event.id} href={`/events/${event.id}`}>
+                <Card
+                  className={`card-interactive animate-slide-up stagger-${Math.min(index + 6, 10)} flex flex-col gap-2.5`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-semibold leading-tight tracking-tight">
+                      {event.title}
+                    </h3>
+                    <Badge
+                      variant={event.status === "open" ? "success" : "warning"}
+                    >
+                      {event.status === "open" ? "Открыто" : "Закрыто"}
+                    </Badge>
+                  </div>
+                  <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                    {event.description}
+                  </p>
+                  <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <CalendarDays className="h-3 w-3 text-primary/70" />
+                      {formatDate(event.date)}
+                      {event.time && `, ${event.time}`}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Users className="h-3 w-3 text-primary/70" />
+                      {event.participantCount}
+                    </span>
+                  </div>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Quick nav */}
+      <section className="animate-slide-up stagger-6 grid grid-cols-2 gap-3">
+        <Link href="/events">
+          <Card className="card-interactive flex items-center gap-3 py-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <CalendarDays className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Мероприятия</p>
+              <p className="text-[10px] text-muted-foreground">Все события</p>
+            </div>
+          </Card>
+        </Link>
+        <Link href="/members">
+          <Card className="card-interactive flex items-center gap-3 py-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Участники</p>
+              <p className="text-[10px] text-muted-foreground">Все люди</p>
+            </div>
+          </Card>
+        </Link>
+      </section>
     </div>
   );
+}
+
+function formatDate(dateStr: string): string {
+  try {
+    return format(parseISO(dateStr), "d MMM yyyy", { locale: ru });
+  } catch {
+    return dateStr;
+  }
 }
