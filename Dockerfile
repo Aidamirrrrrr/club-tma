@@ -19,7 +19,7 @@ COPY . .
 RUN mkdir -p data \
     && corepack enable pnpm \
     && pnpm db:push \
-    && pnpm db:seed \
+    && npx tsx scripts/seed.ts \
     && pnpm build
 
 # --- Production ---
