@@ -171,9 +171,13 @@ export default function HomePage() {
         ) : (
           <div className="flex flex-col gap-3 md:grid md:grid-cols-2">
             {events.map((event, index) => (
-              <Link key={event.id} href={`/events/${event.id}`}>
+              <Link
+                key={event.id}
+                href={`/events/${event.id}`}
+                className="flex"
+              >
                 <Card
-                  className={`card-interactive animate-slide-up stagger-${Math.min(index + 6, 10)} flex flex-col gap-2.5`}
+                  className={`card-interactive animate-slide-up stagger-${Math.min(index + 6, 10)} flex w-full flex-col gap-2.5`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold leading-tight tracking-tight">
@@ -212,8 +216,8 @@ export default function HomePage() {
 
       {/* Quick nav */}
       <section className="animate-slide-up stagger-6 grid grid-cols-2 gap-3">
-        <Link href="/events">
-          <Card className="card-interactive flex items-center gap-3 py-4">
+        <Link href="/events" className="flex">
+          <Card className="card-interactive flex w-full items-center gap-3 py-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
               <CalendarDays className="h-5 w-5 text-primary-foreground" />
             </div>
@@ -225,8 +229,8 @@ export default function HomePage() {
             </div>
           </Card>
         </Link>
-        <Link href="/members">
-          <Card className="card-interactive flex items-center gap-3 py-4">
+        <Link href="/members" className="flex">
+          <Card className="card-interactive flex w-full items-center gap-3 py-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
               <Users className="h-5 w-5 text-primary-foreground" />
             </div>
