@@ -149,56 +149,56 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       const sdkReady = initTmaSDK();
 
       if (sdkReady) {
+        // Mount UI components — errors here should NOT block auth
         try {
-          // Mount mini app
           if (miniApp.mount.isAvailable()) {
             miniApp.mount();
           }
           miniApp.ready();
+        } catch (e) {
+          console.warn("miniApp mount/ready failed:", e);
+        }
 
-          // Mount & expand viewport (with timeout to avoid hanging)
+        try {
+          if (mountViewport.isAvailable()) {
+            await withTimeout(mountViewport(), 2000);
+          }
+          if (expandViewport.isAvailable()) {
+            expandViewport();
+          }
+        } catch {
+          // Viewport mount failed
+        }
+
+        if (requestFullscreen.isAvailable()) {
+          setHasFullscreen(true);
           try {
-            if (mountViewport.isAvailable()) {
-              await withTimeout(mountViewport(), 2000);
-            }
-            if (expandViewport.isAvailable()) {
-              expandViewport();
-            }
+            await withTimeout(requestFullscreen(), 2000);
           } catch {
-            // Viewport mount failed, continue anyway
+            // Not supported
           }
+        }
 
-          // Request fullscreen (with timeout)
-          if (requestFullscreen.isAvailable()) {
-            setHasFullscreen(true);
-            try {
-              await withTimeout(requestFullscreen(), 2000);
-            } catch {
-              // Not supported in older versions
-            }
-          }
+        try {
+          const saTop =
+            (viewportSafeAreaInsetTop() ?? 0) +
+            (viewportContentSafeAreaInsetTop() ?? 0);
+          const saBottom =
+            (viewportSafeAreaInsetBottom() ?? 0) +
+            (viewportContentSafeAreaInsetBottom() ?? 0);
+          setSafeAreaTop(saTop);
+          setSafeAreaBottom(saBottom);
+        } catch {
+          // Safe area signals not available
+        }
 
-          // Read safe area insets from signals
-          try {
-            const saTop =
-              (viewportSafeAreaInsetTop() ?? 0) +
-              (viewportContentSafeAreaInsetTop() ?? 0);
-            const saBottom =
-              (viewportSafeAreaInsetBottom() ?? 0) +
-              (viewportContentSafeAreaInsetBottom() ?? 0);
-            setSafeAreaTop(saTop);
-            setSafeAreaBottom(saBottom);
-          } catch {
-            // Safe area signals not available
-          }
-
-          // Get raw init data for auth headers
+        // Auth — this is the critical part
+        try {
           const initDataRaw = retrieveRawInitData();
           if (initDataRaw) {
             setRawInitData(initDataRaw);
           }
 
-          // Get user from init data
           const tgAppUser = initDataUser();
 
           if (tgAppUser) {
@@ -213,13 +213,13 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
             setTgUser(user);
             await fetchOrCreateUser(user, initDataRaw);
           } else {
-            // SDK initialized but no user data
+            console.warn("No initDataUser found, using mock");
             const mockUser = createMockUser();
             setTgUser(mockUser);
             await fetchOrCreateUser(mockUser);
           }
         } catch (e) {
-          console.error("TMA SDK init error:", e);
+          console.error("Auth flow error:", e);
           const mockUser = createMockUser();
           setTgUser(mockUser);
           await fetchOrCreateUser(mockUser);
