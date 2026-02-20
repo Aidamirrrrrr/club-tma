@@ -15,11 +15,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Create data directory and seed database
+# Create data directory and build
 RUN mkdir -p data \
     && corepack enable pnpm \
     && pnpm db:push \
-    && npx tsx scripts/seed.ts \
     && pnpm build
 
 # --- Production ---
