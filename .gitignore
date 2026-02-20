@@ -39,6 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
-# database
-/data/
+# database (commit the db, ignore temp WAL files)
+/data/*.db-shm
+/data/*.db-wal
 next-env.d.ts
