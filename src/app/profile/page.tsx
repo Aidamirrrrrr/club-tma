@@ -257,8 +257,11 @@ export default function ProfilePage() {
   if (isLoading || loading) return <PageLoader />;
   if (!profile)
     return (
-      <div className="animate-fade-in py-20 text-center text-muted-foreground">
-        Профиль не найден
+      <div className="animate-fade-in flex flex-col items-center gap-4 py-20 text-center text-muted-foreground">
+        <p>Профиль не найден</p>
+        <Button variant="secondary" size="sm" onClick={() => window.location.reload()}>
+          Попробовать снова
+        </Button>
       </div>
     );
 

@@ -14,7 +14,7 @@ export function MainContent({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   // Dynamic padding based on safe area insets from Telegram
-  const topPadding = safeAreaTop > 0 ? safeAreaTop + 12 : 64; // 64px = pt-16 fallback
+  const topPadding = safeAreaTop > 0 ? safeAreaTop + 112 : 112; // 112px = 7rem = pt-28
   const bottomPadding = safeAreaBottom > 0 ? safeAreaBottom + 80 : 96; // 80 for nav, 96px = pb-24 fallback
 
   return (

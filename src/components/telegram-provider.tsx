@@ -123,6 +123,8 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         setDbUser(data.user);
+      } else {
+        console.error("Auth failed:", res.status, await res.text());
       }
     } catch (e) {
       console.error("Auth error:", e);
