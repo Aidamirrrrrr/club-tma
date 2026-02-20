@@ -318,14 +318,7 @@ async function seed() {
 
   const insertedEvents: schema.Event[] = [];
   for (const e of eventsData) {
-    const [result] = await db
-      .insert(schema.events)
-      .values(e)
-      .onConflictDoUpdate({
-        target: schema.events.title,
-        set: { title: e.title },
-      })
-      .returning();
+    const [result] = await db.insert(schema.events).values(e).returning();
     if (result) insertedEvents.push(result);
   }
   console.log(`✅ ${insertedEvents.length} events ready`);
@@ -353,8 +346,7 @@ async function seed() {
       if (!user) continue;
       await db
         .insert(schema.registrations)
-        .values({ userId: user.id, eventId: event.id })
-        .onConflictDoNothing();
+        .values({ userId: user.id, eventId: event.id });
       regCount++;
     }
   }
