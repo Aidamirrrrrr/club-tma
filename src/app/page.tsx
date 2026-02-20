@@ -104,28 +104,36 @@ export default function HomePage() {
       ) : stats ? (
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Card className="card-interactive animate-slide-up stagger-1 p-4">
-            <Users className="mb-2 h-5 w-5 text-primary animate-icon-bounce" />
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary animate-icon-bounce">
+              <Users className="h-4 w-4 text-primary-foreground" />
+            </div>
             <p className="text-2xl font-bold tracking-tight animate-number-pop stagger-1">
               <AnimatedCounter value={stats.totalUsers} />
             </p>
             <p className="text-[11px] text-muted-foreground">Участников</p>
           </Card>
           <Card className="card-interactive animate-slide-up stagger-2 p-4">
-            <CalendarDays className="mb-2 h-5 w-5 text-primary animate-icon-bounce stagger-2" />
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary animate-icon-bounce stagger-2">
+              <CalendarDays className="h-4 w-4 text-primary-foreground" />
+            </div>
             <p className="text-2xl font-bold tracking-tight animate-number-pop stagger-2">
               <AnimatedCounter value={stats.totalEvents} />
             </p>
             <p className="text-[11px] text-muted-foreground">Мероприятий</p>
           </Card>
           <Card className="card-interactive animate-slide-up stagger-3 p-4">
-            <UserCheck className="mb-2 h-5 w-5 text-primary animate-icon-bounce stagger-3" />
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary animate-icon-bounce stagger-3">
+              <UserCheck className="h-4 w-4 text-primary-foreground" />
+            </div>
             <p className="text-2xl font-bold tracking-tight animate-number-pop stagger-3">
               <AnimatedCounter value={stats.totalRegistrations} />
             </p>
             <p className="text-[11px] text-muted-foreground">Регистраций</p>
           </Card>
           <Card className="card-interactive animate-slide-up stagger-4 p-4">
-            <TrendingUp className="mb-2 h-5 w-5 text-primary animate-icon-bounce stagger-4" />
+            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary animate-icon-bounce stagger-4">
+              <TrendingUp className="h-4 w-4 text-primary-foreground" />
+            </div>
             <p className="text-2xl font-bold tracking-tight animate-number-pop stagger-4">
               <AnimatedCounter value={stats.completedEvents} />
             </p>
@@ -202,8 +210,8 @@ export default function HomePage() {
       <section className="animate-slide-up stagger-6 grid grid-cols-2 gap-3">
         <Link href="/events">
           <Card className="card-interactive flex items-center gap-3 py-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-              <CalendarDays className="h-5 w-5 text-primary" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
+              <CalendarDays className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
               <p className="text-sm font-semibold">Мероприятия</p>
@@ -215,8 +223,8 @@ export default function HomePage() {
         </Link>
         <Link href="/members">
           <Card className="card-interactive flex items-center gap-3 py-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-              <Users className="h-5 w-5 text-primary" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
+              <Users className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
               <p className="text-sm font-semibold">Участники</p>

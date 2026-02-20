@@ -9,7 +9,8 @@ import {
   X,
   Star,
   Camera,
-  Palette,
+  ImagePlus,
+  Trash2,
 } from "lucide-react";
 import { useTelegram } from "@/components/telegram-provider";
 import { Card } from "@/components/ui/card";
@@ -58,56 +59,13 @@ function TelegramIcon({ className }: { className?: string }) {
   );
 }
 
-/* ── Gradient Presets ── */
-const gradientPresets = [
-  {
-    id: "default",
-    label: "Зелёный",
-    color: "#86efac",
-    style:
-      "linear-gradient(to bottom, oklch(0.881 0.18 130.6 / 0.12), transparent)",
-  },
-  {
-    id: "blue",
-    label: "Синий",
-    color: "#93c5fd",
-    style:
-      "linear-gradient(to bottom, oklch(0.65 0.18 260 / 0.15), transparent)",
-  },
-  {
-    id: "purple",
-    label: "Фиолет",
-    color: "#c4b5fd",
-    style:
-      "linear-gradient(to bottom, oklch(0.65 0.18 300 / 0.15), transparent)",
-  },
-  {
-    id: "pink",
-    label: "Розовый",
-    color: "#f9a8d4",
-    style:
-      "linear-gradient(to bottom, oklch(0.72 0.18 350 / 0.15), transparent)",
-  },
-  {
-    id: "orange",
-    label: "Оранж",
-    color: "#fdba74",
-    style:
-      "linear-gradient(to bottom, oklch(0.75 0.16 55 / 0.18), transparent)",
-  },
-  {
-    id: "cyan",
-    label: "Голубой",
-    color: "#67e8f9",
-    style:
-      "linear-gradient(to bottom, oklch(0.78 0.14 200 / 0.15), transparent)",
-  },
-];
+/* ── Background helpers ── */
+const defaultGradient =
+  "linear-gradient(to bottom, oklch(0.881 0.18 130.6 / 0.12), transparent)";
 
-function getGradientStyle(id: string | undefined): string {
-  return (
-    gradientPresets.find((g) => g.id === id)?.style ?? gradientPresets[0].style
-  );
+function isImageUrl(value: string | undefined): boolean {
+  if (!value) return false;
+  return value.startsWith("/") || value.startsWith("http");
 }
 
 /* ── Types ── */
@@ -144,7 +102,9 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingBg, setUploadingBg] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bgInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -271,6 +231,29 @@ export default function ProfilePage() {
     }
   };
 
+  const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingBg(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: authHeaders(),
+        body: formData,
+      });
+      if (res.ok) {
+        const { url } = await res.json();
+        setForm((prev) => ({ ...prev, profileGradient: url }));
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUploadingBg(false);
+    }
+  };
+
   if (isLoading || loading) return <PageLoader />;
   if (!profile)
     return (
@@ -288,16 +271,23 @@ export default function ProfilePage() {
       (e) => e.eventStatus === "completed" || e.eventStatus === "cancelled",
     ) || [];
 
-  const currentGradient = editing
-    ? getGradientStyle(form.profileGradient)
-    : getGradientStyle(profile.profileGradient);
+  const currentBg = editing ? form.profileGradient : profile.profileGradient;
+  const hasBgImage = isImageUrl(currentBg);
 
   return (
     <div className="flex flex-col gap-5 pb-6">
       {/* Avatar & Name Header */}
       <div
-        className="animate-fade-in -mx-4 -mt-2 overflow-hidden rounded-b-3xl px-4 pb-6 pt-4 transition-all duration-500 lg:mx-0 lg:mt-0 lg:rounded-3xl"
-        style={{ background: currentGradient }}
+        className="animate-fade-in -mx-4 -mt-28 overflow-hidden rounded-b-3xl px-4 pb-6 pt-28 transition-all duration-500 lg:-mt-8 lg:rounded-3xl"
+        style={
+          hasBgImage
+            ? {
+                backgroundImage: `linear-gradient(to bottom, transparent 40%, var(--background)), url(${currentBg})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : { background: defaultGradient }
+        }
       >
         <div className="flex flex-col items-center gap-3 text-center">
           {/* Avatar with edit overlay */}
@@ -403,39 +393,71 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Gradient picker — only in edit mode */}
+      {/* Background image picker — only in edit mode */}
       {editing && (
         <Card className="animate-slide-up">
           <div className="mb-3 flex items-center gap-2">
-            <Palette className="h-4 w-4 text-muted-foreground" />
+            <ImagePlus className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium">Фон профиля</span>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {gradientPresets.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() =>
-                  setForm((prev) => ({
-                    ...prev,
-                    profileGradient: preset.id,
-                  }))
-                }
-                className={`flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-all ${
-                  form.profileGradient === preset.id
-                    ? "bg-foreground/8 ring-2 ring-primary"
-                    : "hover:bg-foreground/4"
-                }`}
-              >
-                <div
-                  className="h-8 w-8 rounded-full shadow-sm ring-1 ring-border"
-                  style={{ background: preset.color }}
+          <input
+            ref={bgInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleBgUpload}
+          />
+          <div className="flex items-center gap-3">
+            {isImageUrl(form.profileGradient) ? (
+              <div className="relative h-20 w-full overflow-hidden rounded-xl">
+                <img
+                  src={form.profileGradient}
+                  alt="Фон"
+                  className="h-full w-full object-cover"
                 />
-                <span className="text-[10px] text-muted-foreground">
-                  {preset.label}
-                </span>
+                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/30">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => bgInputRef.current?.click()}
+                    disabled={uploadingBg}
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                    Заменить
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        profileGradient: "default",
+                      }))
+                    }
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => bgInputRef.current?.click()}
+                disabled={uploadingBg}
+                className="flex h-20 w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border transition-colors hover:bg-muted/50"
+              >
+                {uploadingBg ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+                ) : (
+                  <>
+                    <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      Загрузить изображение
+                    </span>
+                  </>
+                )}
               </button>
-            ))}
+            )}
           </div>
         </Card>
       )}
@@ -564,8 +586,8 @@ export default function ProfilePage() {
                 {upcomingEvents.map((ev) => (
                   <Link key={ev.eventId} href={`/events/${ev.eventId}`}>
                     <Card className="card-interactive flex items-center gap-3 p-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                        <CalendarDays className="h-4 w-4 text-primary" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                        <CalendarDays className="h-4 w-4 text-primary-foreground" />
                       </div>
                       <div>
                         <p className="text-sm font-medium">{ev.eventTitle}</p>

@@ -138,7 +138,7 @@ export default function EventsPage() {
                   <img
                     src={event.coverUrl}
                     alt={event.title}
-                    className="-mx-4 -mt-4 h-40 w-[calc(100%+2rem)] rounded-t-2xl object-cover"
+                    className="-mx-4 -mt-4 mb-1 h-48 w-[calc(100%+2rem)] rounded-t-2xl object-cover"
                   />
                 )}
                 <div className="flex items-start justify-between gap-2">

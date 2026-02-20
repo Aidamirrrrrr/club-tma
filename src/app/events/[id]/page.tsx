@@ -164,7 +164,7 @@ export default function EventDetailPage() {
         <img
           src={event.coverUrl}
           alt={event.title}
-          className="animate-scale-in -mx-4 h-52 w-[calc(100%+2rem)] rounded-2xl object-cover shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]"
+          className="animate-scale-in -mx-4 -mt-16 h-64 w-[calc(100%+2rem)] rounded-b-3xl object-cover shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)] lg:-mt-8"
         />
       )}
 
@@ -183,8 +183,8 @@ export default function EventDetailPage() {
           {/* Info */}
           <Card className="animate-slide-up stagger-1 flex flex-col gap-3">
             <span className="flex items-center gap-3 text-sm">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                <CalendarDays className="h-4 w-4 text-primary" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <CalendarDays className="h-4 w-4 text-primary-foreground" />
               </div>
               <span className="text-muted-foreground">
                 {formatDate(event.date)}
@@ -193,15 +193,15 @@ export default function EventDetailPage() {
             </span>
             {event.location && (
               <span className="flex items-center gap-3 text-sm">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                  <MapPin className="h-4 w-4 text-primary" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                  <MapPin className="h-4 w-4 text-primary-foreground" />
                 </div>
                 <span className="text-muted-foreground">{event.location}</span>
               </span>
             )}
             <span className="flex items-center gap-3 text-sm">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                <Users className="h-4 w-4 text-primary" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <Users className="h-4 w-4 text-primary-foreground" />
               </div>
               <span className="text-muted-foreground">
                 {event.participantCount} участник(ов)

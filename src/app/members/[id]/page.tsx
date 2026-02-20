@@ -291,8 +291,8 @@ export default function MemberDetailPage() {
                     className="card-interactive animate-slide-in-right flex items-center gap-3 p-3"
                     style={{ animationDelay: `${0.05 * (index + 1)}s` }}
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                      <CalendarDays className="h-4 w-4 text-primary" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                      <CalendarDays className="h-4 w-4 text-primary-foreground" />
                     </div>
                     <div>
                       <p className="text-sm font-medium">{ev.eventTitle}</p>
