@@ -138,7 +138,7 @@ export default function HomePage() {
       <section className="animate-slide-up stagger-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold tracking-tight">
-            Ближайшие события
+            Ближайшие мероприятия
           </h2>
           <Link
             href="/events"
@@ -207,7 +207,9 @@ export default function HomePage() {
             </div>
             <div>
               <p className="text-sm font-semibold">Мероприятия</p>
-              <p className="text-[10px] text-muted-foreground">Все события</p>
+              <p className="text-[10px] text-muted-foreground">
+                Все мероприятия
+              </p>
             </div>
           </Card>
         </Link>

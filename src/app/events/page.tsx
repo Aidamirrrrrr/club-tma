@@ -132,7 +132,7 @@ export default function EventsPage() {
           {events.map((event, index) => (
             <Link key={event.id} href={`/events/${event.id}`}>
               <Card
-                className={`card-interactive animate-slide-up stagger-${Math.min(index + 1, 10)} flex flex-col gap-2.5`}
+                className={`card-interactive animate-slide-up stagger-${Math.min(index + 1, 10)} flex flex-col gap-2.5 overflow-hidden`}
               >
                 {event.coverUrl && (
                   <img
