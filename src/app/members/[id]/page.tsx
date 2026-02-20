@@ -42,7 +42,16 @@ interface MemberDetail {
   phone: string;
   role: string;
   blocked: boolean;
+  profileGradient: string;
   events: MemberEvent[];
+}
+
+const defaultGradient =
+  "linear-gradient(to bottom, oklch(0.881 0.18 130.6 / 0.12), transparent)";
+
+function isImageUrl(value: string | undefined): boolean {
+  if (!value) return false;
+  return value.startsWith("/") || value.startsWith("http");
 }
 
 function getInitials(firstName: string, lastName: string): string {
@@ -137,7 +146,18 @@ export default function MemberDetailPage() {
   return (
     <div className="flex flex-col gap-5 pb-6">
       {/* Profile header */}
-      <div className="animate-fade-in -mx-4 -mt-2 overflow-hidden rounded-b-3xl bg-linear-to-b from-primary/10 to-transparent px-4 pb-6 pt-4 lg:rounded-3xl lg:mx-0 lg:mt-0">
+      <div
+        className="animate-fade-in -mx-4 -mt-28 overflow-hidden rounded-b-3xl px-4 pb-6 pt-28 transition-all duration-500 lg:-mt-8 lg:rounded-3xl"
+        style={
+          isImageUrl(member.profileGradient)
+            ? {
+                backgroundImage: `linear-gradient(to bottom, transparent 40%, var(--background)), url(${member.profileGradient})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : { background: defaultGradient }
+        }
+      >
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="animate-bounce-in relative">
             <Avatar size="lg" className="size-24! ring-4 ring-card shadow-lg">

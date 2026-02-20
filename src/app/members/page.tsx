@@ -44,7 +44,7 @@ export default function MembersPage() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="flex flex-col gap-5 pb-6">
+    <div className="flex flex-col gap-5 overflow-x-hidden pb-6">
       <h1 className="animate-fade-in text-xl font-bold tracking-tight">
         Участники
       </h1>
@@ -126,7 +126,7 @@ export default function MembersPage() {
                     </p>
                   )}
                   {(member.instagram || member.telegram) && (
-                    <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                    <div className="mt-1 flex min-w-0 items-center gap-2 overflow-hidden text-[11px] text-muted-foreground">
                       {member.instagram && (
                         <span className="flex items-center gap-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-black">
                           <svg
