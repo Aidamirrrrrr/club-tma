@@ -19,7 +19,7 @@ export function MainContent({ children }: { children: ReactNode }) {
     <main
       className="mx-auto w-full max-w-lg overflow-x-hidden px-4 lg:max-w-3xl lg:pt-8 lg:pb-8"
       style={{
-        paddingTop: `calc(env(safe-area-inset-top, 0px) + 32px)`,
+        paddingTop: `calc(env(safe-area-inset-top, 0px) + 24px)`,
         paddingBottom: `${bottomPadding}px`,
       }}
     >
