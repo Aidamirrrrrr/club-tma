@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Home, CalendarDays, Users, UserCircle } from "lucide-react";
 
@@ -20,7 +21,7 @@ export function DesktopSidebar() {
         {/* Logo */}
         <div className="mb-6 flex items-center gap-3 px-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-sm">
-            <span className="text-sm font-bold text-primary-foreground">K</span>
+            <Image src="/logo.png" alt="Клуб" width={22} height={22} />
           </div>
           <div>
             <p className="text-sm font-bold tracking-tight">Клуб</p>

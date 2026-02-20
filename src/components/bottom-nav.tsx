@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, CalendarDays, Users, UserCircle } from "lucide-react";
+import { useTelegram } from "@/components/telegram-provider";
 
 const navItems = [
   { href: "/", label: "Главная", icon: Home },
@@ -13,11 +14,14 @@ const navItems = [
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { safeAreaBottom } = useTelegram();
 
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up bg-background/80 shadow-[0_-2px_12px_0_rgb(0_0_0/0.06)] backdrop-blur-xl lg:hidden"
-      style={{ paddingBottom: "20px" }}
+      style={{
+        paddingBottom: safeAreaBottom > 0 ? `${safeAreaBottom}px` : "20px",
+      }}
     >
       <div className="mx-auto flex max-w-lg items-center justify-around">
         {navItems.map((item) => {

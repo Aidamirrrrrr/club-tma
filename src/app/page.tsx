@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   CalendarDays,
   Users,
@@ -96,8 +97,8 @@ export default function HomePage() {
       {/* Hero welcome */}
       <section className="animate-fade-in">
         <div className="mb-4 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm">
-            <span className="text-lg font-bold text-primary-foreground">K</span>
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm lg:hidden">
+            <Image src="/logo.png" alt="Клуб" width={26} height={26} />
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight">

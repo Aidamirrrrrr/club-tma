@@ -3,11 +3,27 @@
 import {
   createContext,
   useContext,
+  useCallback,
   useEffect,
   useState,
   type ReactNode,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import {
+  init,
+  miniApp,
+  backButton,
+  setDebug,
+  retrieveRawInitData,
+  initDataUser,
+  mountViewport,
+  expandViewport,
+  requestFullscreen,
+  viewportSafeAreaInsetTop,
+  viewportSafeAreaInsetBottom,
+  viewportContentSafeAreaInsetTop,
+  viewportContentSafeAreaInsetBottom,
+} from "@telegram-apps/sdk-react";
 import type { User } from "@/db/schema";
 
 interface TelegramUser {
@@ -25,6 +41,8 @@ interface TelegramContextType {
   isAdmin: boolean;
   isLoading: boolean;
   hasFullscreen: boolean;
+  safeAreaTop: number;
+  safeAreaBottom: number;
   refetchUser: () => Promise<void>;
   authHeaders: () => Record<string, string>;
 }
@@ -35,6 +53,8 @@ const TelegramContext = createContext<TelegramContextType>({
   isAdmin: false,
   isLoading: true,
   hasFullscreen: false,
+  safeAreaTop: 0,
+  safeAreaBottom: 0,
   refetchUser: async () => {},
   authHeaders: () => ({}),
 });
@@ -43,51 +63,14 @@ export function useTelegram() {
   return useContext(TelegramContext);
 }
 
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp: {
-        initData: string;
-        initDataUnsafe: {
-          user?: TelegramUser;
-          query_id?: string;
-        };
-        ready: () => void;
-        expand: () => void;
-        requestFullscreen?: () => void;
-        close: () => void;
-        MainButton: {
-          text: string;
-          show: () => void;
-          hide: () => void;
-          onClick: (cb: () => void) => void;
-        };
-        BackButton: {
-          show: () => void;
-          hide: () => void;
-          onClick: (cb: () => void) => void;
-          offClick: (cb: () => void) => void;
-          isVisible: boolean;
-        };
-        themeParams: Record<string, string>;
-        colorScheme: "light" | "dark";
-        headerColor: string;
-        backgroundColor: string;
-        isFullscreen?: boolean;
-        safeAreaInset?: {
-          top: number;
-          bottom: number;
-          left: number;
-          right: number;
-        };
-        contentSafeAreaInset?: {
-          top: number;
-          bottom: number;
-          left: number;
-          right: number;
-        };
-      };
-    };
+function initTmaSDK(): boolean {
+  try {
+    const debug = process.env.NODE_ENV === "development";
+    init();
+    setDebug(debug);
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -96,26 +79,28 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   const [dbUser, setDbUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasFullscreen, setHasFullscreen] = useState(false);
-  const [initData, setInitData] = useState<string | undefined>();
+  const [safeAreaTop, setSafeAreaTop] = useState(0);
+  const [safeAreaBottom, setSafeAreaBottom] = useState(0);
+  const [rawInitData, setRawInitData] = useState<string | undefined>();
 
-  const authHeaders = (): Record<string, string> => {
+  const authHeaders = useCallback((): Record<string, string> => {
     const headers: Record<string, string> = {};
-    if (initData) {
-      headers["x-telegram-init-data"] = initData;
+    if (rawInitData) {
+      headers["x-telegram-init-data"] = rawInitData;
     } else if (dbUser) {
       headers["x-user-id"] = String(dbUser.id);
     }
     return headers;
-  };
+  }, [rawInitData, dbUser]);
 
   const fetchOrCreateUser = async (
     tgUserData: TelegramUser,
-    initData?: string,
+    initDataRaw?: string,
   ) => {
     try {
       const body: Record<string, unknown> = { ...tgUserData };
-      if (initData) {
-        body.initData = initData;
+      if (initDataRaw) {
+        body.initData = initDataRaw;
       }
       const res = await fetch("/api/auth", {
         method: "POST",
@@ -131,7 +116,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const refetchUser = async () => {
+  const refetchUser = useCallback(async () => {
     if (!dbUser) return;
     try {
       const res = await fetch(`/api/users/${dbUser.id}`);
@@ -142,55 +127,91 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error("Refetch error:", e);
     }
-  };
+  }, [dbUser]);
 
   useEffect(() => {
-    const initTelegram = async () => {
-      const tg = window.Telegram?.WebApp;
-      if (tg) {
-        tg.ready();
-        tg.expand();
-        // Request fullscreen if available
-        if (typeof tg.requestFullscreen === "function") {
-          setHasFullscreen(true);
-          try {
-            tg.requestFullscreen();
-          } catch (e) {
-            // Not supported in older versions
+    const bootstrap = async () => {
+      const sdkReady = initTmaSDK();
+
+      if (sdkReady) {
+        try {
+          // Mount mini app
+          if (miniApp.mount.isAvailable()) {
+            miniApp.mount();
           }
-        }
-        const user = tg.initDataUnsafe?.user;
-        if (user) {
-          setTgUser(user);
-          setInitData(tg.initData);
-          await fetchOrCreateUser(user, tg.initData);
-        } else {
-          // Telegram script loaded but no user (opened outside Telegram)
-          const mockUser: TelegramUser = {
-            id: 123456789,
-            first_name: "Алексей",
-            last_name: "Смирнов",
-            username: "alexsmirnov",
-            photo_url: "https://i.pravatar.cc/300?img=11",
-          };
+          miniApp.ready();
+
+          // Mount & expand viewport
+          if (mountViewport.isAvailable()) {
+            await mountViewport();
+          }
+          if (expandViewport.isAvailable()) {
+            expandViewport();
+          }
+
+          // Request fullscreen
+          if (requestFullscreen.isAvailable()) {
+            setHasFullscreen(true);
+            try {
+              await requestFullscreen();
+            } catch {
+              // Not supported in older versions
+            }
+          }
+
+          // Read safe area insets from signals
+          const saTop =
+            (viewportSafeAreaInsetTop() ?? 0) +
+            (viewportContentSafeAreaInsetTop() ?? 0);
+          const saBottom =
+            (viewportSafeAreaInsetBottom() ?? 0) +
+            (viewportContentSafeAreaInsetBottom() ?? 0);
+          setSafeAreaTop(saTop);
+          setSafeAreaBottom(saBottom);
+
+          // Get raw init data for auth headers
+          const initDataRaw = retrieveRawInitData();
+          if (initDataRaw) {
+            setRawInitData(initDataRaw);
+          }
+
+          // Get user from init data
+          const tgAppUser = initDataUser();
+
+          if (tgAppUser) {
+            const user: TelegramUser = {
+              id: tgAppUser.id,
+              first_name: tgAppUser.first_name,
+              last_name: tgAppUser.last_name ?? undefined,
+              username: tgAppUser.username ?? undefined,
+              photo_url: tgAppUser.photo_url ?? undefined,
+              language_code: tgAppUser.language_code ?? undefined,
+            };
+            setTgUser(user);
+            await fetchOrCreateUser(user, initDataRaw);
+          } else {
+            // SDK initialized but no user data
+            const mockUser = createMockUser();
+            setTgUser(mockUser);
+            await fetchOrCreateUser(mockUser);
+          }
+        } catch (e) {
+          console.error("TMA SDK init error:", e);
+          const mockUser = createMockUser();
           setTgUser(mockUser);
           await fetchOrCreateUser(mockUser);
         }
       } else {
-        // Dev mode: mock user
-        const mockUser: TelegramUser = {
-          id: 123456789,
-          first_name: "Алексей",
-          last_name: "Смирнов",
-          username: "alexsmirnov",
-          photo_url: "https://i.pravatar.cc/300?img=11",
-        };
+        // Dev mode: SDK not available
+        const mockUser = createMockUser();
         setTgUser(mockUser);
         await fetchOrCreateUser(mockUser);
       }
+
       setIsLoading(false);
     };
-    initTelegram();
+
+    bootstrap();
   }, []);
 
   return (
@@ -201,6 +222,8 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         isAdmin: dbUser?.role === "admin",
         isLoading,
         hasFullscreen,
+        safeAreaTop,
+        safeAreaBottom,
         refetchUser,
         authHeaders,
       }}
@@ -210,21 +233,36 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   );
 }
 
+function createMockUser(): TelegramUser {
+  return {
+    id: 123456789,
+    first_name: "Алексей",
+    last_name: "Смирнов",
+    username: "alexsmirnov",
+    photo_url: "https://i.pravatar.cc/300?img=11",
+  };
+}
+
 // Hook to manage Telegram BackButton on sub-pages
 export function useTelegramBackButton() {
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    const tg = window.Telegram?.WebApp;
     const isSubPage =
       pathname !== "/" &&
       pathname !== "/events" &&
       pathname !== "/members" &&
       pathname !== "/profile";
 
+    if (!backButton.mount.isAvailable()) return;
+
+    backButton.mount();
+
     if (!isSubPage) {
-      tg?.BackButton.hide();
+      if (backButton.hide.isAvailable()) {
+        backButton.hide();
+      }
       return;
     }
 
@@ -232,12 +270,16 @@ export function useTelegramBackButton() {
       router.back();
     };
 
-    tg?.BackButton.onClick(handleBack);
-    tg?.BackButton.show();
+    backButton.onClick(handleBack);
+    if (backButton.show.isAvailable()) {
+      backButton.show();
+    }
 
     return () => {
-      tg?.BackButton.offClick(handleBack);
-      tg?.BackButton.hide();
+      backButton.offClick(handleBack);
+      if (backButton.hide.isAvailable()) {
+        backButton.hide();
+      }
     };
   }, [pathname, router]);
 }
