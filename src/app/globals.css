@@ -98,6 +98,12 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+input,
+textarea,
+[contenteditable] {
+  caret-color: var(--foreground);
+}
+
 body {
   font-family:
     var(--font-sans),

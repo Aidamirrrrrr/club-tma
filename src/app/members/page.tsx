@@ -125,7 +125,10 @@ export default function MembersPage() {
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">
                   {member.bio ||
                     [
-                      member.telegram && `@${member.telegram}`,
+                      member.telegram &&
+                        (member.telegram.startsWith("@")
+                          ? member.telegram
+                          : `@${member.telegram}`),
                       member.instagram && member.instagram,
                     ]
                       .filter(Boolean)
