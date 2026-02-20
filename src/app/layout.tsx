@@ -41,9 +41,11 @@ export default function RootLayout({
       >
         <TelegramProvider>
           <TelegramBackButtonManager />
-          <div className="flex min-h-screen">
+          <div className="flex min-h-screen lg:h-screen lg:overflow-hidden">
             <DesktopSidebar />
-            <MainContent>{children}</MainContent>
+            <div className="flex-1 lg:overflow-y-auto">
+              <MainContent>{children}</MainContent>
+            </div>
           </div>
           <BottomNav />
         </TelegramProvider>

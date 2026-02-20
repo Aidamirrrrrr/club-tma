@@ -112,6 +112,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+@media (min-width: 1024px) {
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+  body {
+    padding-bottom: 0;
+  }
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 3px;

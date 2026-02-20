@@ -163,8 +163,36 @@ export default function HomePage() {
         </section>
       ) : null}
 
+      {/* Quick nav */}
+      <section className="animate-slide-up stagger-5 grid grid-cols-2 gap-3">
+        <Link href="/events" className="flex">
+          <Card className="card-interactive flex w-full items-center gap-3 py-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
+              <CalendarDays className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Мероприятия</p>
+              <p className="text-[10px] text-muted-foreground">
+                Все мероприятия
+              </p>
+            </div>
+          </Card>
+        </Link>
+        <Link href="/members" className="flex">
+          <Card className="card-interactive flex w-full items-center gap-3 py-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
+              <Users className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold">Участники</p>
+              <p className="text-[10px] text-muted-foreground">Все люди</p>
+            </div>
+          </Card>
+        </Link>
+      </section>
+
       {/* Upcoming events */}
-      <section className="animate-slide-up stagger-5">
+      <section className="animate-slide-up stagger-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold tracking-tight">
             Ближайшие мероприятия
@@ -251,34 +279,6 @@ export default function HomePage() {
             ))}
           </div>
         )}
-      </section>
-
-      {/* Quick nav */}
-      <section className="animate-slide-up stagger-6 grid grid-cols-2 gap-3">
-        <Link href="/events" className="flex">
-          <Card className="card-interactive flex w-full items-center gap-3 py-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-              <CalendarDays className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Мероприятия</p>
-              <p className="text-[10px] text-muted-foreground">
-                Все мероприятия
-              </p>
-            </div>
-          </Card>
-        </Link>
-        <Link href="/members" className="flex">
-          <Card className="card-interactive flex w-full items-center gap-3 py-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-              <Users className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Участники</p>
-              <p className="text-[10px] text-muted-foreground">Все люди</p>
-            </div>
-          </Card>
-        </Link>
       </section>
     </div>
   );
