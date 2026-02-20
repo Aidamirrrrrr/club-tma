@@ -29,23 +29,24 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`relative flex flex-1 flex-col items-center gap-1 py-3 text-[10px] font-medium transition-all duration-200 ${
+              className={`relative flex flex-1 flex-col items-center gap-1.5 py-3 text-[10px] font-medium transition-all duration-200 ${
                 isActive
-                  ? "text-primary"
+                  ? "text-foreground"
                   : "text-muted-foreground active:scale-90"
               }`}
             >
-              <div className="relative">
+              <div
+                className={`flex items-center justify-center rounded-full transition-all duration-300 ease-out ${
+                  isActive ? "bg-primary px-4 py-1.5 shadow-sm" : "px-2 py-1.5"
+                }`}
+              >
                 <Icon
                   className={`h-5 w-5 transition-all duration-300 ease-out ${
                     isActive
-                      ? "scale-110 text-primary"
+                      ? "text-primary-foreground"
                       : "group-active:scale-90"
                   }`}
                 />
-                {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-primary animate-bounce-in" />
-                )}
               </div>
               <span
                 className={`tracking-wide transition-all duration-200 ${
@@ -54,9 +55,6 @@ export function BottomNav() {
               >
                 {item.label}
               </span>
-              {isActive && (
-                <span className="absolute top-0 left-1/2 h-0.5 w-8 -translate-x-1/2 rounded-full bg-primary animate-scale-in" />
-              )}
             </Link>
           );
         })}

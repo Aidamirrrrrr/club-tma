@@ -19,6 +19,7 @@ export const users = pgTable("users", {
   instagram: text("instagram").default(""),
   telegram: text("telegram").default(""),
   phone: text("phone").default(""),
+  profileGradient: text("profile_gradient").default("default"),
   role: text("role").$type<"user" | "admin">().notNull().default("user"),
   blocked: boolean("blocked").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),

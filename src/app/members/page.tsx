@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Search, Users as UsersIcon } from "lucide-react";
+import { Search, Users as UsersIcon, Star } from "lucide-react";
 import { useTelegram } from "@/components/telegram-provider";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -111,8 +111,8 @@ export default function MembersPage() {
                     </AvatarFallback>
                   </Avatar>
                   {member.role === "admin" && (
-                    <span className="absolute -right-0.5 -bottom-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground ring-2 ring-card">
-                      ★
+                    <span className="absolute -right-0.5 -bottom-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-card">
+                      <Star className="h-2.5 w-2.5 fill-current" />
                     </span>
                   )}
                 </div>
@@ -129,14 +129,12 @@ export default function MembersPage() {
                     <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
                       {member.instagram && (
                         <span className="flex items-center gap-0.5 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-black">
-                          <span>📷</span>
-                          {member.instagram}
+                          IG {member.instagram}
                         </span>
                       )}
                       {member.telegram && (
-                        <span className="flex items-center gap-0.5 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-black">
-                          <span>✈️</span>
-                          {member.telegram}
+                        <span className="flex items-center gap-0.5 rounded bg-sky-500 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                          TG {member.telegram}
                         </span>
                       )}
                     </div>

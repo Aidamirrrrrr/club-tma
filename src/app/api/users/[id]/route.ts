@@ -74,6 +74,7 @@ export async function PATCH(
       "telegram",
       "phone",
       "photoUrl",
+      "profileGradient",
       "role",
       "blocked",
     ];

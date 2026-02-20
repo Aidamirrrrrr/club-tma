@@ -41,15 +41,12 @@ export function DesktopSidebar() {
                 href={item.href}
                 className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                   isActive
-                    ? "bg-primary/10 text-black"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                <Icon className={`h-5 w-5 ${isActive ? "text-black" : ""}`} />
+                <Icon className="h-5 w-5" />
                 <span>{item.label}</span>
-                {isActive && (
-                  <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" />
-                )}
               </Link>
             );
           })}
