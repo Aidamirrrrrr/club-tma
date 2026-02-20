@@ -24,6 +24,7 @@ interface TelegramContextType {
   dbUser: User | null;
   isAdmin: boolean;
   isLoading: boolean;
+  hasFullscreen: boolean;
   refetchUser: () => Promise<void>;
   authHeaders: () => Record<string, string>;
 }
@@ -33,6 +34,7 @@ const TelegramContext = createContext<TelegramContextType>({
   dbUser: null,
   isAdmin: false,
   isLoading: true,
+  hasFullscreen: false,
   refetchUser: async () => {},
   authHeaders: () => ({}),
 });
@@ -93,6 +95,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   const [tgUser, setTgUser] = useState<TelegramUser | null>(null);
   const [dbUser, setDbUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasFullscreen, setHasFullscreen] = useState(false);
   const [initData, setInitData] = useState<string | undefined>();
 
   const authHeaders = (): Record<string, string> => {
@@ -148,10 +151,13 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         tg.ready();
         tg.expand();
         // Request fullscreen if available
-        try {
-          tg.requestFullscreen?.();
-        } catch (e) {
-          // Not supported in older versions
+        if (typeof tg.requestFullscreen === "function") {
+          setHasFullscreen(true);
+          try {
+            tg.requestFullscreen();
+          } catch (e) {
+            // Not supported in older versions
+          }
         }
         const user = tg.initDataUnsafe?.user;
         if (user) {
@@ -194,6 +200,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
         dbUser,
         isAdmin: dbUser?.role === "admin",
         isLoading,
+        hasFullscreen,
         refetchUser,
         authHeaders,
       }}

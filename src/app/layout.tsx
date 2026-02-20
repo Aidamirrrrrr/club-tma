@@ -5,6 +5,7 @@ import { TelegramProvider } from "@/components/telegram-provider";
 import { BottomNav } from "@/components/bottom-nav";
 import { DesktopSidebar } from "@/components/desktop-sidebar";
 import { TelegramBackButtonManager } from "@/components/telegram-back-button";
+import { MainContent } from "@/components/main-content";
 import Script from "next/script";
 
 const geistSans = Geist({
@@ -42,9 +43,7 @@ export default function RootLayout({
           <TelegramBackButtonManager />
           <div className="flex min-h-screen">
             <DesktopSidebar />
-            <main className="mx-auto w-full max-w-lg px-4 pt-28 pb-36 lg:max-w-3xl lg:pt-8 lg:pb-8">
-              {children}
-            </main>
+            <MainContent>{children}</MainContent>
           </div>
           <BottomNav />
         </TelegramProvider>

@@ -128,13 +128,13 @@ export default function MembersPage() {
                   {(member.instagram || member.telegram) && (
                     <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
                       {member.instagram && (
-                        <span className="flex items-center gap-0.5 rounded bg-muted px-1 py-0.5 text-[10px] font-medium text-foreground/70">
+                        <span className="flex items-center gap-0.5 rounded bg-black px-1.5 py-0.5 text-[10px] font-medium text-primary">
                           <span>📷</span>
                           {member.instagram}
                         </span>
                       )}
                       {member.telegram && (
-                        <span className="flex items-center gap-0.5 rounded bg-muted px-1 py-0.5 text-[10px] font-medium text-foreground/70">
+                        <span className="flex items-center gap-0.5 rounded bg-black px-1.5 py-0.5 text-[10px] font-medium text-primary">
                           <span>✈️</span>
                           {member.telegram}
                         </span>
