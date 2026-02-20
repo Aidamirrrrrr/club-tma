@@ -199,7 +199,7 @@ export default function HomePage() {
           </h2>
           <Link
             href="/events"
-            className="flex items-center gap-1 rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-foreground transition-colors hover:bg-primary/25"
+            className="flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-black transition-colors hover:bg-primary/90"
           >
             Все <ChevronRight className="h-3.5 w-3.5" />
           </Link>
