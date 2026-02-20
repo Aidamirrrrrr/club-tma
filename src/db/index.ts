@@ -1,5 +1,8 @@
 import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import {
+  drizzle,
+  type BetterSQLite3Database,
+} from "drizzle-orm/better-sqlite3";
 import * as schema from "./schema";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
@@ -16,7 +19,7 @@ if (!existsSync(dir)) {
 // Singleton to survive hot-reloads in dev (turbopack re-evaluates modules)
 const g = globalThis as unknown as {
   __sqlite?: Database.Database;
-  __db?: ReturnType<typeof drizzle>;
+  __db?: BetterSQLite3Database<typeof schema>;
 };
 
 if (!g.__sqlite) {
