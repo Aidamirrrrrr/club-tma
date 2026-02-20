@@ -96,7 +96,7 @@ export default function MembersPage() {
           ).map((member, index) => (
             <Link key={member.id} href={`/members/${member.id}`}>
               <Card
-                className={`card-interactive animate-slide-up stagger-${Math.min(index + 1, 10)} flex h-[72px] items-center gap-3.5 p-3`}
+                className={`card-interactive animate-slide-up stagger-${Math.min(index + 1, 10)} flex h-18 items-center gap-3.5 p-3`}
               >
                 <div className="relative">
                   <Avatar>
