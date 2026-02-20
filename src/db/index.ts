@@ -13,8 +13,20 @@ if (!existsSync(dir)) {
   mkdirSync(dir, { recursive: true });
 }
 
-const sqlite = new Database(DB_PATH);
-sqlite.pragma("journal_mode = WAL");
-sqlite.pragma("foreign_keys = ON");
+// Singleton to survive hot-reloads in dev (turbopack re-evaluates modules)
+const g = globalThis as unknown as {
+  __sqlite?: Database.Database;
+  __db?: ReturnType<typeof drizzle>;
+};
 
-export const db = drizzle(sqlite, { schema });
+if (!g.__sqlite) {
+  g.__sqlite = new Database(DB_PATH);
+  g.__sqlite.pragma("journal_mode = WAL");
+  g.__sqlite.pragma("foreign_keys = ON");
+}
+
+if (!g.__db) {
+  g.__db = drizzle(g.__sqlite, { schema });
+}
+
+export const db = g.__db;
