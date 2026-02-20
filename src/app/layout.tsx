@@ -42,7 +42,7 @@ export default function RootLayout({
           <TelegramBackButtonManager />
           <div className="flex min-h-screen">
             <DesktopSidebar />
-            <main className="mx-auto w-full max-w-lg px-4 pt-32 pb-36 lg:max-w-3xl lg:pt-8 lg:pb-8">
+            <main className="mx-auto w-full max-w-lg px-4 pt-28 pb-36 lg:max-w-3xl lg:pt-8 lg:pb-8">
               {children}
             </main>
           </div>
