@@ -15,11 +15,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Create data directory and build
-RUN mkdir -p data \
-    && corepack enable pnpm \
-    && pnpm db:push \
-    && pnpm build
+# Build
+RUN corepack enable pnpm && pnpm build
 
 # --- Production ---
 FROM base AS runner

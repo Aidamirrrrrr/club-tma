@@ -1,6 +1,7 @@
 node_modules
 .next
 .git
-data
+data/*.db-shm
+data/*.db-wal
 *.md
 .DS_Store
