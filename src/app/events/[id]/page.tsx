@@ -169,9 +169,11 @@ export default function EventDetailPage() {
     );
 
   return (
-    <div className="flex flex-col gap-5 pb-6">
+    <div
+      className={`flex flex-col gap-5 pb-6${event.coverUrl ? "" : " pt-32 px-4 lg:pt-8"}`}
+    >
       {event.coverUrl && (
-        <div className="animate-scale-in -mx-4 -mt-28 overflow-hidden lg:-mt-8">
+        <div className="animate-scale-in">
           <Image
             src={event.coverUrl}
             alt={event.title}
@@ -182,171 +184,175 @@ export default function EventDetailPage() {
         </div>
       )}
 
-      <div className="animate-fade-in flex items-start justify-between gap-2">
-        <h1 className="text-xl font-bold tracking-tight lg:text-2xl">
-          {event.title}
-        </h1>
-        <Badge variant={statusVariants[event.status]}>
-          {statusLabels[event.status]}
-        </Badge>
-      </div>
-
-      {/* Content: two-column on desktop */}
-      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
-        <div className="flex flex-col gap-5">
-          {/* Info */}
-          <Card className="animate-slide-up stagger-1 flex flex-col gap-3">
-            <span className="flex items-center gap-3 text-sm">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <CalendarDays className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="text-muted-foreground">
-                {formatDate(event.date, "d MMMM yyyy")}
-                {event.time && `, ${event.time}`}
-              </span>
-            </span>
-            {event.location && (
-              <span className="flex items-center gap-3 text-sm">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                  <MapPin className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <span className="text-muted-foreground">{event.location}</span>
-              </span>
-            )}
-            <span className="flex items-center gap-3 text-sm">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Users className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="text-muted-foreground">
-                {event.participantCount} участник(ов)
-                {event.maxParticipants
-                  ? ` / ${event.maxParticipants} мест`
-                  : ""}
-              </span>
-            </span>
-          </Card>
-
-          {/* Description */}
-          {event.description && (
-            <Card className="animate-slide-up stagger-2">
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                {event.description}
-              </p>
-            </Card>
-          )}
-
-          {/* Actions */}
-          <div className="animate-slide-up stagger-3 flex gap-2">
-            {event.status === "open" &&
-              dbUser &&
-              (isRegistered ? (
-                <Button
-                  variant="secondary"
-                  className="flex-1"
-                  onClick={handleUnregister}
-                  disabled={actionLoading}
-                >
-                  <UserX className="h-4 w-4" />
-                  Отменить регистрацию
-                </Button>
-              ) : (
-                <Button
-                  className="flex-1"
-                  onClick={handleRegister}
-                  disabled={actionLoading}
-                >
-                  <UserCheck className="h-4 w-4" />
-                  Зарегистрироваться
-                </Button>
-              ))}
-            <Button variant="ghost" onClick={handleShare}>
-              <Share2 className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Admin actions */}
-          {isAdmin && (
-            <div className="animate-slide-up stagger-4 flex gap-2">
-              <Link href={`/events/${event.id}/edit`} className="flex-1">
-                <Button variant="secondary" className="w-full">
-                  <Edit className="h-4 w-4" />
-                  Редактировать
-                </Button>
-              </Link>
-              <Button
-                variant="destructive"
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
+      <div className={`flex flex-col gap-5${event.coverUrl ? " px-4" : ""}`}>
+        <div className="animate-fade-in flex items-start justify-between gap-2">
+          <h1 className="text-xl font-bold tracking-tight lg:text-2xl">
+            {event.title}
+          </h1>
+          <Badge variant={statusVariants[event.status]}>
+            {statusLabels[event.status]}
+          </Badge>
         </div>
 
-        {/* Participants */}
-        <section className="animate-slide-up stagger-5">
-          <h2 className="mb-3 text-base font-semibold tracking-tight">
-            Участники ({event.participantCount})
-          </h2>
-          {event.participants.length === 0 ? (
-            <p className="animate-fade-in text-sm text-muted-foreground">
-              Пока никто не зарегистрировался
-            </p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {event.participants.map((p, index) => {
-                const isOrganizer = p.id === event.createdBy;
-                return (
-                  <Link key={p.id} href={`/members/${p.id}`}>
-                    <Card
-                      className={`card-interactive animate-slide-in-right flex items-center gap-3 p-3${isOrganizer ? " ring-1 ring-primary/30" : ""}`}
-                      style={{ animationDelay: `${0.05 * (index + 1)}s` }}
-                    >
-                      <div className="relative">
-                        <Avatar size="sm">
-                          {p.photoUrl && (
-                            <AvatarImage
-                              src={p.photoUrl}
-                              alt={`${p.firstName} ${p.lastName}`}
-                            />
-                          )}
-                          <AvatarFallback>
-                            {getInitials(p.firstName, p.lastName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        {isOrganizer && (
-                          <span className="absolute -right-0.5 -bottom-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-card">
-                            <Star className="h-2.5 w-2.5 fill-current" />
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium">
-                            {p.firstName} {p.lastName}
-                          </p>
+        {/* Content: two-column on desktop */}
+        <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
+          <div className="flex flex-col gap-5">
+            {/* Info */}
+            <Card className="animate-slide-up stagger-1 flex flex-col gap-3">
+              <span className="flex items-center gap-3 text-sm">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                  <CalendarDays className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <span className="text-muted-foreground">
+                  {formatDate(event.date, "d MMMM yyyy")}
+                  {event.time && `, ${event.time}`}
+                </span>
+              </span>
+              {event.location && (
+                <span className="flex items-center gap-3 text-sm">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                    <MapPin className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                  <span className="text-muted-foreground">
+                    {event.location}
+                  </span>
+                </span>
+              )}
+              <span className="flex items-center gap-3 text-sm">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                  <Users className="h-4 w-4 text-primary-foreground" />
+                </div>
+                <span className="text-muted-foreground">
+                  {event.participantCount} участник(ов)
+                  {event.maxParticipants
+                    ? ` / ${event.maxParticipants} мест`
+                    : ""}
+                </span>
+              </span>
+            </Card>
+
+            {/* Description */}
+            {event.description && (
+              <Card className="animate-slide-up stagger-2">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                  {event.description}
+                </p>
+              </Card>
+            )}
+
+            {/* Actions */}
+            <div className="animate-slide-up stagger-3 flex gap-2">
+              {event.status === "open" &&
+                dbUser &&
+                (isRegistered ? (
+                  <Button
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={handleUnregister}
+                    disabled={actionLoading}
+                  >
+                    <UserX className="h-4 w-4" />
+                    Отменить регистрацию
+                  </Button>
+                ) : (
+                  <Button
+                    className="flex-1"
+                    onClick={handleRegister}
+                    disabled={actionLoading}
+                  >
+                    <UserCheck className="h-4 w-4" />
+                    Зарегистрироваться
+                  </Button>
+                ))}
+              <Button variant="ghost" onClick={handleShare}>
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Admin actions */}
+            {isAdmin && (
+              <div className="animate-slide-up stagger-4 flex gap-2">
+                <Link href={`/events/${event.id}/edit`} className="flex-1">
+                  <Button variant="secondary" className="w-full">
+                    <Edit className="h-4 w-4" />
+                    Редактировать
+                  </Button>
+                </Link>
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Participants */}
+          <section className="animate-slide-up stagger-5">
+            <h2 className="mb-3 text-base font-semibold tracking-tight">
+              Участники ({event.participantCount})
+            </h2>
+            {event.participants.length === 0 ? (
+              <p className="animate-fade-in text-sm text-muted-foreground">
+                Пока никто не зарегистрировался
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {event.participants.map((p, index) => {
+                  const isOrganizer = p.id === event.createdBy;
+                  return (
+                    <Link key={p.id} href={`/members/${p.id}`}>
+                      <Card
+                        className={`card-interactive animate-slide-in-right flex items-center gap-3 p-3${isOrganizer ? " ring-1 ring-primary/30" : ""}`}
+                        style={{ animationDelay: `${0.05 * (index + 1)}s` }}
+                      >
+                        <div className="relative">
+                          <Avatar size="sm">
+                            {p.photoUrl && (
+                              <AvatarImage
+                                src={p.photoUrl}
+                                alt={`${p.firstName} ${p.lastName}`}
+                              />
+                            )}
+                            <AvatarFallback>
+                              {getInitials(p.firstName, p.lastName)}
+                            </AvatarFallback>
+                          </Avatar>
                           {isOrganizer && (
-                            <Badge
-                              variant="success"
-                              className="text-[10px] px-1.5 py-0"
-                            >
-                              Организатор
-                            </Badge>
+                            <span className="absolute -right-0.5 -bottom-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-card">
+                              <Star className="h-2.5 w-2.5 fill-current" />
+                            </span>
                           )}
                         </div>
-                        {p.username && (
-                          <p className="text-[11px] text-muted-foreground">
-                            @{p.username}
-                          </p>
-                        )}
-                      </div>
-                    </Card>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-        </section>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">
+                              {p.firstName} {p.lastName}
+                            </p>
+                            {isOrganizer && (
+                              <Badge
+                                variant="success"
+                                className="text-[10px] px-1.5 py-0"
+                              >
+                                Организатор
+                              </Badge>
+                            )}
+                          </div>
+                          {p.username && (
+                            <p className="text-[11px] text-muted-foreground">
+                              @{p.username}
+                            </p>
+                          )}
+                        </div>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
       </div>
 
       <ConfirmDialog

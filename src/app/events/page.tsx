@@ -63,7 +63,7 @@ export default function EventsPage() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="flex flex-col gap-5 pb-6">
+    <div className="flex flex-col gap-5 px-4 pt-32 pb-6 lg:pt-8">
       <div className="animate-fade-in flex items-center justify-between">
         <h1 className="text-xl font-bold tracking-tight">Мероприятия</h1>
         {isAdmin && (

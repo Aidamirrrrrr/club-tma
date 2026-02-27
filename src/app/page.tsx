@@ -77,7 +77,7 @@ export default function HomePage() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="flex flex-col gap-7 pb-6">
+    <div className="flex flex-col gap-7 px-4 pt-32 pb-6 lg:pt-8">
       {/* Hero welcome */}
       <section className="animate-fade-in">
         <div className="mb-4 flex items-center gap-3">

@@ -47,7 +47,7 @@ export default function MembersPage() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-5 pb-6">
+    <div className="flex w-full min-w-0 flex-col gap-5 px-4 pt-32 pb-6 lg:pt-8">
       <h1 className="animate-fade-in text-xl font-bold tracking-tight">
         Участники
       </h1>

@@ -282,7 +282,7 @@ export default function ProfilePage() {
     <div className="flex flex-col gap-5 pb-6">
       {/* Avatar & Name Header */}
       <div
-        className="animate-fade-in -mx-4 -mt-28 overflow-hidden rounded-b-3xl px-4 pb-6 pt-28 transition-all duration-500 lg:-mt-8 lg:rounded-3xl"
+        className="animate-fade-in overflow-clip rounded-b-3xl px-4 pb-6 pt-32 transition-all duration-500 lg:rounded-3xl lg:pt-8"
         style={
           hasBgImage
             ? {
@@ -397,246 +397,248 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Background image picker — only in edit mode */}
-      {editing && (
-        <Card className="animate-slide-up">
-          <div className="mb-3 flex items-center gap-2">
-            <ImagePlus className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Фон профиля</span>
-          </div>
-          <input
-            ref={bgInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleBgUpload}
-          />
-          <div className="flex items-center gap-3">
-            {isImageUrl(form.profileGradient) ? (
-              <div className="relative h-20 w-full overflow-hidden rounded-xl">
-                {/* biome-ignore lint/performance/noImgElement: user-uploaded dynamic content */}
-                <img
-                  src={form.profileGradient}
-                  alt="Фон"
-                  className="h-full w-full object-cover"
-                />
-                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/30">
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => bgInputRef.current?.click()}
-                    disabled={uploadingBg}
-                  >
-                    <Camera className="h-3.5 w-3.5" />
-                    Заменить
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() =>
-                      setForm((prev) => ({
-                        ...prev,
-                        profileGradient: "default",
-                      }))
-                    }
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+      <div className="flex flex-col gap-5 px-4">
+        {/* Background image picker — only in edit mode */}
+        {editing && (
+          <Card className="animate-slide-up">
+            <div className="mb-3 flex items-center gap-2">
+              <ImagePlus className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Фон профиля</span>
+            </div>
+            <input
+              ref={bgInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleBgUpload}
+            />
+            <div className="flex items-center gap-3">
+              {isImageUrl(form.profileGradient) ? (
+                <div className="relative h-20 w-full overflow-hidden rounded-xl">
+                  {/* biome-ignore lint/performance/noImgElement: user-uploaded dynamic content */}
+                  <img
+                    src={form.profileGradient}
+                    alt="Фон"
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/30">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => bgInputRef.current?.click()}
+                      disabled={uploadingBg}
+                    >
+                      <Camera className="h-3.5 w-3.5" />
+                      Заменить
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() =>
+                        setForm((prev) => ({
+                          ...prev,
+                          profileGradient: "default",
+                        }))
+                      }
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => bgInputRef.current?.click()}
+                  disabled={uploadingBg}
+                  className="flex h-20 w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border transition-colors hover:bg-muted/50"
+                >
+                  {uploadingBg ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+                  ) : (
+                    <>
+                      <ImagePlus className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        Загрузить изображение
+                      </span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+          </Card>
+        )}
+
+        {/* Bio */}
+        {editing ? (
+          <Card className="animate-slide-up stagger-1">
+            <FormTextarea
+              label="О себе"
+              name="bio"
+              id="bio"
+              value={form.bio}
+              onChange={handleChange}
+              placeholder="Расскажите о себе..."
+            />
+          </Card>
+        ) : (
+          profile.bio && (
+            <Card className="animate-slide-up stagger-1">
+              <p className="text-sm leading-relaxed">{profile.bio}</p>
+            </Card>
+          )
+        )}
+
+        {/* Contacts + Events: two-column on desktop */}
+        <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
+          <div className="flex flex-col gap-5">
+            {/* Contacts */}
+            {editing ? (
+              <Card className="animate-slide-up stagger-2 flex flex-col gap-4">
+                <h3 className="text-sm font-semibold">Контакты</h3>
+                <FormField
+                  label="Instagram"
+                  name="instagram"
+                  id="instagram"
+                  value={form.instagram}
+                  onChange={handleChange}
+                  placeholder="@username"
+                  maxLength={32}
+                />
+                <FormField
+                  label="Telegram"
+                  name="telegram"
+                  id="telegram"
+                  value={form.telegram}
+                  onChange={handleChange}
+                  placeholder="@username"
+                  maxLength={34}
+                />
+                <FormField
+                  label="Телефон"
+                  name="phone"
+                  id="phone"
+                  type="tel"
+                  value={form.phone}
+                  onChange={handleChange}
+                  placeholder="+7 900 123 45 67"
+                  maxLength={18}
+                />
+              </Card>
             ) : (
-              <button
-                type="button"
-                onClick={() => bgInputRef.current?.click()}
-                disabled={uploadingBg}
-                className="flex h-20 w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border transition-colors hover:bg-muted/50"
-              >
-                {uploadingBg ? (
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
-                ) : (
-                  <>
-                    <ImagePlus className="h-5 w-5 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      Загрузить изображение
-                    </span>
-                  </>
+              <Card className="animate-slide-up stagger-2 flex flex-col gap-0 divide-y divide-border p-0">
+                {profile.instagram && (
+                  <a
+                    href={`https://instagram.com/${profile.instagram.replace("@", "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-purple-500/15 to-pink-500/15">
+                      <InstagramIcon className="h-4.5 w-4.5 text-pink-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Instagram</p>
+                      <p className="font-medium">{profile.instagram}</p>
+                    </div>
+                  </a>
                 )}
-              </button>
+                {profile.telegram && (
+                  <a
+                    href={`https://t.me/${profile.telegram.replace("@", "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10">
+                      <TelegramIcon className="h-4.5 w-4.5 text-sky-500" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Telegram</p>
+                      <p className="font-medium">{profile.telegram}</p>
+                    </div>
+                  </a>
+                )}
+                {profile.phone && (
+                  <a
+                    href={`tel:${profile.phone}`}
+                    className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10">
+                      <Phone className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Телефон</p>
+                      <p className="font-medium">{profile.phone}</p>
+                    </div>
+                  </a>
+                )}
+                {!profile.instagram && !profile.telegram && !profile.phone && (
+                  <p className="px-4 py-4 text-center text-sm text-muted-foreground">
+                    Добавьте контактную информацию
+                  </p>
+                )}
+              </Card>
             )}
           </div>
-        </Card>
-      )}
 
-      {/* Bio */}
-      {editing ? (
-        <Card className="animate-slide-up stagger-1">
-          <FormTextarea
-            label="О себе"
-            name="bio"
-            id="bio"
-            value={form.bio}
-            onChange={handleChange}
-            placeholder="Расскажите о себе..."
-          />
-        </Card>
-      ) : (
-        profile.bio && (
-          <Card className="animate-slide-up stagger-1">
-            <p className="text-sm leading-relaxed">{profile.bio}</p>
-          </Card>
-        )
-      )}
-
-      {/* Contacts + Events: two-column on desktop */}
-      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
-        <div className="flex flex-col gap-5">
-          {/* Contacts */}
-          {editing ? (
-            <Card className="animate-slide-up stagger-2 flex flex-col gap-4">
-              <h3 className="text-sm font-semibold">Контакты</h3>
-              <FormField
-                label="Instagram"
-                name="instagram"
-                id="instagram"
-                value={form.instagram}
-                onChange={handleChange}
-                placeholder="@username"
-                maxLength={32}
-              />
-              <FormField
-                label="Telegram"
-                name="telegram"
-                id="telegram"
-                value={form.telegram}
-                onChange={handleChange}
-                placeholder="@username"
-                maxLength={34}
-              />
-              <FormField
-                label="Телефон"
-                name="phone"
-                id="phone"
-                type="tel"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="+7 900 123 45 67"
-                maxLength={18}
-              />
-            </Card>
-          ) : (
-            <Card className="animate-slide-up stagger-2 flex flex-col gap-0 divide-y divide-border p-0">
-              {profile.instagram && (
-                <a
-                  href={`https://instagram.com/${profile.instagram.replace("@", "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-purple-500/15 to-pink-500/15">
-                    <InstagramIcon className="h-4.5 w-4.5 text-pink-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">Instagram</p>
-                    <p className="font-medium">{profile.instagram}</p>
-                  </div>
-                </a>
-              )}
-              {profile.telegram && (
-                <a
-                  href={`https://t.me/${profile.telegram.replace("@", "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10">
-                    <TelegramIcon className="h-4.5 w-4.5 text-sky-500" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">Telegram</p>
-                    <p className="font-medium">{profile.telegram}</p>
-                  </div>
-                </a>
-              )}
-              {profile.phone && (
-                <a
-                  href={`tel:${profile.phone}`}
-                  className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10">
-                    <Phone className="h-4 w-4 text-emerald-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">Телефон</p>
-                    <p className="font-medium">{profile.phone}</p>
-                  </div>
-                </a>
-              )}
-              {!profile.instagram && !profile.telegram && !profile.phone && (
-                <p className="px-4 py-4 text-center text-sm text-muted-foreground">
-                  Добавьте контактную информацию
-                </p>
-              )}
-            </Card>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-5">
-          {/* Upcoming events */}
-          <section className="animate-slide-up stagger-3">
-            <h2 className="mb-3 text-base font-semibold tracking-tight">
-              Предстоящие мероприятия ({upcomingEvents.length})
-            </h2>
-            {upcomingEvents.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Вы не зарегистрированы на мероприятия
-              </p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {upcomingEvents.map((ev) => (
-                  <Link key={ev.eventId} href={`/events/${ev.eventId}`}>
-                    <Card className="card-interactive flex items-center gap-3 p-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                        <CalendarDays className="h-4 w-4 text-primary-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{ev.eventTitle}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {formatDate(ev.eventDate)}
-                          {ev.eventTime && `, ${ev.eventTime}`}
-                        </p>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* Past events */}
-          {pastEvents.length > 0 && (
-            <section className="animate-slide-up stagger-4">
+          <div className="flex flex-col gap-5">
+            {/* Upcoming events */}
+            <section className="animate-slide-up stagger-3">
               <h2 className="mb-3 text-base font-semibold tracking-tight">
-                История ({pastEvents.length})
+                Предстоящие мероприятия ({upcomingEvents.length})
               </h2>
-              <div className="flex flex-col gap-2">
-                {pastEvents.map((ev) => (
-                  <Link key={ev.eventId} href={`/events/${ev.eventId}`}>
-                    <Card className="card-interactive flex items-center gap-3 p-3 opacity-60">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
-                        <CalendarDays className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">{ev.eventTitle}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {formatDate(ev.eventDate)}
-                        </p>
-                      </div>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
+              {upcomingEvents.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Вы не зарегистрированы на мероприятия
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {upcomingEvents.map((ev) => (
+                    <Link key={ev.eventId} href={`/events/${ev.eventId}`}>
+                      <Card className="card-interactive flex items-center gap-3 p-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                          <CalendarDays className="h-4 w-4 text-primary-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{ev.eventTitle}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {formatDate(ev.eventDate)}
+                            {ev.eventTime && `, ${ev.eventTime}`}
+                          </p>
+                        </div>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </section>
-          )}
+
+            {/* Past events */}
+            {pastEvents.length > 0 && (
+              <section className="animate-slide-up stagger-4">
+                <h2 className="mb-3 text-base font-semibold tracking-tight">
+                  История ({pastEvents.length})
+                </h2>
+                <div className="flex flex-col gap-2">
+                  {pastEvents.map((ev) => (
+                    <Link key={ev.eventId} href={`/events/${ev.eventId}`}>
+                      <Card className="card-interactive flex items-center gap-3 p-3 opacity-60">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted">
+                          <CalendarDays className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">{ev.eventTitle}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {formatDate(ev.eventDate)}
+                          </p>
+                        </div>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
         </div>
       </div>
     </div>

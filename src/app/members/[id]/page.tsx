@@ -130,7 +130,7 @@ export default function MemberDetailPage() {
     <div className="flex flex-col gap-5 pb-6">
       {/* Profile header */}
       <div
-        className="animate-fade-in -mx-4 -mt-28 overflow-hidden rounded-b-3xl px-4 pb-6 pt-28 transition-all duration-500 lg:-mt-8 lg:rounded-3xl"
+        className="animate-fade-in overflow-clip rounded-b-3xl px-4 pb-6 pt-32 transition-all duration-500 lg:rounded-3xl lg:pt-8"
         style={
           isImageUrl(member.profileGradient)
             ? {
@@ -192,138 +192,140 @@ export default function MemberDetailPage() {
         </div>
       </div>
 
-      {/* Contacts + Admin + Events: two-column on desktop */}
-      <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
-        <div className="flex flex-col gap-5">
-          {/* Contacts */}
-          {(member.instagram || member.telegram || member.phone) && (
-            <Card className="animate-slide-up stagger-2 flex flex-col gap-0 divide-y divide-border p-0">
-              {member.instagram && (
-                <a
-                  href={`https://instagram.com/${member.instagram.replace("@", "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-purple-500/15 to-pink-500/15">
-                    <InstagramIcon className="h-4.5 w-4.5 text-pink-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">Instagram</p>
-                    <p className="font-medium">{member.instagram}</p>
-                  </div>
-                </a>
-              )}
-              {member.telegram && (
-                <a
-                  href={`https://t.me/${member.telegram.replace("@", "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10">
-                    <TelegramIcon className="h-4.5 w-4.5 text-sky-500" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">Telegram</p>
-                    <p className="font-medium">{member.telegram}</p>
-                  </div>
-                </a>
-              )}
-              {member.phone && (
-                <a
-                  href={`tel:${member.phone}`}
-                  className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10">
-                    <Phone className="h-4 w-4 text-emerald-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">Телефон</p>
-                    <p className="font-medium">{member.phone}</p>
-                  </div>
-                </a>
-              )}
-            </Card>
-          )}
-          {!member.instagram && !member.telegram && !member.phone && (
-            <Card className="animate-slide-up stagger-2">
-              <p className="text-center text-sm text-muted-foreground">
-                Нет контактной информации
-              </p>
-            </Card>
-          )}
-
-          {/* Admin controls */}
-          {isAdmin && (
-            <div className="animate-slide-up stagger-3 flex flex-col gap-2">
-              <Button
-                variant="secondary"
-                className="w-full"
-                onClick={toggleRole}
-              >
-                {member.role === "admin" ? (
-                  <>
-                    <ShieldOff className="h-4 w-4" /> Снять организатора
-                  </>
-                ) : (
-                  <>
-                    <Shield className="h-4 w-4" /> Сделать организатором
-                  </>
-                )}
-              </Button>
-              <Button
-                variant={member.blocked ? "default" : "destructive"}
-                className="w-full"
-                onClick={toggleBlock}
-              >
-                {member.blocked ? (
-                  <>
-                    <CheckCircle className="h-4 w-4" /> Разблокировать
-                  </>
-                ) : (
-                  <>
-                    <Ban className="h-4 w-4" /> Заблокировать
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
-        </div>
-
-        {/* Event history */}
-        <section className="animate-slide-up stagger-4">
-          <h2 className="mb-3 text-base font-semibold tracking-tight">
-            История мероприятий ({member.events?.length || 0})
-          </h2>
-          {!member.events || member.events.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Пока не участвовал(а) в мероприятиях
-            </p>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {member.events.map((ev, index) => (
-                <Link key={ev.eventId} href={`/events/${ev.eventId}`}>
-                  <Card
-                    className="card-interactive animate-slide-in-right flex items-center gap-3 p-3"
-                    style={{ animationDelay: `${0.05 * (index + 1)}s` }}
+      <div className="flex flex-col gap-5 px-4">
+        {/* Contacts + Admin + Events: two-column on desktop */}
+        <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
+          <div className="flex flex-col gap-5">
+            {/* Contacts */}
+            {(member.instagram || member.telegram || member.phone) && (
+              <Card className="animate-slide-up stagger-2 flex flex-col gap-0 divide-y divide-border p-0">
+                {member.instagram && (
+                  <a
+                    href={`https://instagram.com/${member.instagram.replace("@", "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                      <CalendarDays className="h-4 w-4 text-primary-foreground" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-purple-500/15 to-pink-500/15">
+                      <InstagramIcon className="h-4.5 w-4.5 text-pink-600" />
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">{ev.eventTitle}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {formatDate(ev.eventDate)}
-                        {ev.eventTime && `, ${ev.eventTime}`}
-                      </p>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Instagram</p>
+                      <p className="font-medium">{member.instagram}</p>
                     </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
+                  </a>
+                )}
+                {member.telegram && (
+                  <a
+                    href={`https://t.me/${member.telegram.replace("@", "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10">
+                      <TelegramIcon className="h-4.5 w-4.5 text-sky-500" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Telegram</p>
+                      <p className="font-medium">{member.telegram}</p>
+                    </div>
+                  </a>
+                )}
+                {member.phone && (
+                  <a
+                    href={`tel:${member.phone}`}
+                    className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10">
+                      <Phone className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Телефон</p>
+                      <p className="font-medium">{member.phone}</p>
+                    </div>
+                  </a>
+                )}
+              </Card>
+            )}
+            {!member.instagram && !member.telegram && !member.phone && (
+              <Card className="animate-slide-up stagger-2">
+                <p className="text-center text-sm text-muted-foreground">
+                  Нет контактной информации
+                </p>
+              </Card>
+            )}
+
+            {/* Admin controls */}
+            {isAdmin && (
+              <div className="animate-slide-up stagger-3 flex flex-col gap-2">
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={toggleRole}
+                >
+                  {member.role === "admin" ? (
+                    <>
+                      <ShieldOff className="h-4 w-4" /> Снять организатора
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="h-4 w-4" /> Сделать организатором
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant={member.blocked ? "default" : "destructive"}
+                  className="w-full"
+                  onClick={toggleBlock}
+                >
+                  {member.blocked ? (
+                    <>
+                      <CheckCircle className="h-4 w-4" /> Разблокировать
+                    </>
+                  ) : (
+                    <>
+                      <Ban className="h-4 w-4" /> Заблокировать
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Event history */}
+          <section className="animate-slide-up stagger-4">
+            <h2 className="mb-3 text-base font-semibold tracking-tight">
+              История мероприятий ({member.events?.length || 0})
+            </h2>
+            {!member.events || member.events.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Пока не участвовал(а) в мероприятиях
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {member.events.map((ev, index) => (
+                  <Link key={ev.eventId} href={`/events/${ev.eventId}`}>
+                    <Card
+                      className="card-interactive animate-slide-in-right flex items-center gap-3 p-3"
+                      style={{ animationDelay: `${0.05 * (index + 1)}s` }}
+                    >
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                        <CalendarDays className="h-4 w-4 text-primary-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{ev.eventTitle}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {formatDate(ev.eventDate)}
+                          {ev.eventTime && `, ${ev.eventTime}`}
+                        </p>
+                      </div>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   );

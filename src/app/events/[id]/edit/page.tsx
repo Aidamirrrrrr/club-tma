@@ -141,7 +141,7 @@ export default function EditEventPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5 pb-6 lg:mx-auto lg:max-w-lg">
+    <div className="flex flex-col gap-5 px-4 pt-32 pb-6 lg:mx-auto lg:max-w-lg lg:pt-8">
       <h1 className="animate-slide-up text-xl font-bold tracking-tight">
         Редактировать мероприятие
       </h1>
