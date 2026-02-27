@@ -171,7 +171,7 @@ export default function EventDetailPage() {
   return (
     <div className="flex flex-col gap-5 pb-6">
       {event.coverUrl && (
-        <div className="animate-scale-in -mx-4 -mt-28 lg:-mt-8">
+        <div className="animate-scale-in -mx-4 -mt-28 overflow-hidden lg:-mt-8">
           <Image
             src={event.coverUrl}
             alt={event.title}
