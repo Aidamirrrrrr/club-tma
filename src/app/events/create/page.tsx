@@ -10,10 +10,12 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { FormField, FormTextarea } from "@/components/ui/form-field";
 import { PageLoader } from "@/components/ui/spinner";
 import { TimePicker } from "@/components/ui/time-picker";
+import { useToast } from "@/components/ui/toast";
 
 export default function CreateEventPage() {
   const router = useRouter();
   const { dbUser, isAdmin, isLoading, authHeaders } = useTelegram();
+  const { success, error: showError } = useToast();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -48,9 +50,12 @@ export default function CreateEventPage() {
       if (res.ok) {
         const { url } = await res.json();
         setForm((prev) => ({ ...prev, coverUrl: url }));
+      } else {
+        showError("Не удалось загрузить обложку");
       }
     } catch (err) {
       console.error(err);
+      showError("Ошибка загрузки файла");
     } finally {
       setUploading(false);
     }
@@ -73,10 +78,15 @@ export default function CreateEventPage() {
       });
       if (res.ok) {
         const event = await res.json();
+        success("Мероприятие создано");
         router.push(`/events/${event.id}`);
+      } else {
+        const data = await res.json().catch(() => null);
+        showError(data?.error || "Не удалось создать мероприятие");
       }
     } catch (e) {
       console.error(e);
+      showError("Ошибка сети");
     } finally {
       setSaving(false);
     }

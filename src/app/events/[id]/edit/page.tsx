@@ -18,11 +18,13 @@ import {
 } from "@/components/ui/select";
 import { PageLoader } from "@/components/ui/spinner";
 import { TimePicker } from "@/components/ui/time-picker";
+import { useToast } from "@/components/ui/toast";
 
 export default function EditEventPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { isAdmin, isLoading, authHeaders } = useTelegram();
+  const { success, error: showError } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -91,9 +93,12 @@ export default function EditEventPage() {
       if (res.ok) {
         const { url } = await res.json();
         setForm((prev) => ({ ...prev, coverUrl: url }));
+      } else {
+        showError("Не удалось загрузить обложку");
       }
     } catch (err) {
       console.error(err);
+      showError("Ошибка загрузки файла");
     } finally {
       setUploading(false);
     }
@@ -114,9 +119,16 @@ export default function EditEventPage() {
             : 0,
         }),
       });
-      if (res.ok) router.push(`/events/${id}`);
+      if (res.ok) {
+        success("Мероприятие сохранено");
+        router.push(`/events/${id}`);
+      } else {
+        const data = await res.json().catch(() => null);
+        showError(data?.error || "Не удалось сохранить");
+      }
     } catch (e) {
       console.error(e);
+      showError("Ошибка сети");
     } finally {
       setSaving(false);
     }
