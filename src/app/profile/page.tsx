@@ -114,7 +114,41 @@ export default function ProfilePage() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    let masked = value;
+
+    if (name === "instagram" || name === "telegram") {
+      // Strip everything except letters, digits, dots, underscores; ensure @ prefix
+      masked = value.replace(/[^a-zA-Z0-9._]/g, "");
+      if (masked && !masked.startsWith("@")) masked = `@${masked}`;
+      if (masked === "@") masked = "";
+    } else if (name === "phone") {
+      // Keep only digits and leading +, format with spaces
+      const raw = value.replace(/[^\d+]/g, "");
+      if (raw.startsWith("+") || raw.length > 0) {
+        const plus = raw.startsWith("+");
+        const digits = raw.replace(/\D/g, "");
+        if (digits.length > 0) {
+          // Simple international format: +X XXX XXX XX XX (max 15 digits per E.164)
+          let formatted = "+";
+          const d = digits.slice(0, 15);
+          // Group: country(1-3) + rest in groups of 3-3-2-2
+          formatted += d.slice(0, Math.min(d.length, 1));
+          if (d.length > 1) formatted += ` ${d.slice(1, 4)}`;
+          if (d.length > 4) formatted += ` ${d.slice(4, 7)}`;
+          if (d.length > 7) formatted += ` ${d.slice(7, 9)}`;
+          if (d.length > 9) formatted += ` ${d.slice(9, 11)}`;
+          if (d.length > 11) formatted += ` ${d.slice(11, 15)}`;
+          masked = formatted;
+        } else {
+          masked = plus ? "+" : "";
+        }
+      } else {
+        masked = "";
+      }
+    }
+
+    setForm((prev) => ({ ...prev, [name]: masked }));
   };
 
   const startEditing = () => {
@@ -277,7 +311,7 @@ export default function ProfilePage() {
               </AvatarFallback>
             </Avatar>
             {profile.role === "admin" && !editing && (
-              <span className="absolute -right-1 bottom-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground ring-3 ring-card shadow-md">
+              <span className="absolute -right-1 bottom-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground ring-3 ring-card shadow-md animate-bounce-in">
                 <Star className="h-3.5 w-3.5 fill-current" />
               </span>
             )}
@@ -467,6 +501,7 @@ export default function ProfilePage() {
                 value={form.instagram}
                 onChange={handleChange}
                 placeholder="@username"
+                maxLength={32}
               />
               <FormField
                 label="Telegram"
@@ -475,14 +510,17 @@ export default function ProfilePage() {
                 value={form.telegram}
                 onChange={handleChange}
                 placeholder="@username"
+                maxLength={34}
               />
               <FormField
                 label="Телефон"
                 name="phone"
                 id="phone"
+                type="tel"
                 value={form.phone}
                 onChange={handleChange}
-                placeholder="+7..."
+                placeholder="+7 900 123 45 67"
+                maxLength={18}
               />
             </Card>
           ) : (

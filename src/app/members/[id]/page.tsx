@@ -86,7 +86,9 @@ export default function MemberDetailPage() {
       });
       if (res.ok) {
         toast.success(
-          newRole === "admin" ? "Назначен администратором" : "Роль снята",
+          newRole === "admin"
+            ? "Назначен организатором"
+            : "Роль организатора снята",
         );
         loadMember();
       }
@@ -153,7 +155,10 @@ export default function MemberDetailPage() {
               </AvatarFallback>
             </Avatar>
             {member.role === "admin" && (
-              <span className="absolute -right-1 bottom-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground ring-3 ring-card shadow-md">
+              <span
+                key={`star-${member.role}`}
+                className="absolute -right-1 bottom-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground ring-3 ring-card shadow-md animate-bounce-in"
+              >
                 <Star className="h-3.5 w-3.5 fill-current" />
               </span>
             )}
@@ -167,11 +172,21 @@ export default function MemberDetailPage() {
                 {member.bio}
               </p>
             )}
-            <div className="mt-2 flex items-center justify-center gap-2">
+            <div className="mt-2 flex min-h-6 items-center justify-center gap-2">
               {member.role === "admin" && (
-                <Badge variant="success">Организатор</Badge>
+                <Badge
+                  key={`badge-${member.role}`}
+                  variant="success"
+                  className="animate-bounce-in"
+                >
+                  Организатор
+                </Badge>
               )}
-              {member.blocked && <Badge variant="danger">Заблокирован</Badge>}
+              {member.blocked && (
+                <Badge variant="danger" className="animate-bounce-in">
+                  Заблокирован
+                </Badge>
+              )}
             </div>
           </div>
         </div>
@@ -241,24 +256,25 @@ export default function MemberDetailPage() {
 
           {/* Admin controls */}
           {isAdmin && (
-            <div className="animate-slide-up stagger-3 flex gap-2">
+            <div className="animate-slide-up stagger-3 flex flex-col gap-2">
               <Button
                 variant="secondary"
-                className="flex-1"
+                className="w-full"
                 onClick={toggleRole}
               >
                 {member.role === "admin" ? (
                   <>
-                    <ShieldOff className="h-4 w-4" /> Снять админа
+                    <ShieldOff className="h-4 w-4" /> Снять организатора
                   </>
                 ) : (
                   <>
-                    <Shield className="h-4 w-4" /> Сделать админом
+                    <Shield className="h-4 w-4" /> Сделать организатором
                   </>
                 )}
               </Button>
               <Button
                 variant={member.blocked ? "default" : "destructive"}
+                className="w-full"
                 onClick={toggleBlock}
               >
                 {member.blocked ? (

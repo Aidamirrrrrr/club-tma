@@ -42,8 +42,13 @@ export function TimePicker({
 
   useEffect(() => {
     if (open && selectedHour && hourRef.current) {
-      const el = hourRef.current.querySelector(`[data-hour="${selectedHour}"]`);
-      el?.scrollIntoView({ block: "center" });
+      const el = hourRef.current.querySelector(
+        `[data-hour="${selectedHour}"]`,
+      ) as HTMLElement | null;
+      if (el) {
+        hourRef.current.scrollTop =
+          el.offsetTop - hourRef.current.clientHeight / 2 + el.clientHeight / 2;
+      }
     }
   }, [open, selectedHour]);
 

@@ -87,14 +87,14 @@ function ToastItem({
 
   const bgClass =
     toast.type === "success"
-      ? "bg-emerald-600"
+      ? "bg-primary text-primary-foreground"
       : toast.type === "error"
-        ? "bg-red-600"
-        : "bg-foreground";
+        ? "bg-destructive text-white"
+        : "bg-foreground text-background";
 
   return (
     <div
-      className={`${bgClass} animate-slide-up rounded-xl px-4 py-2.5 text-sm font-medium text-white shadow-lg cursor-pointer`}
+      className={`${bgClass} animate-slide-up rounded-xl px-4 py-2.5 text-center text-sm font-medium shadow-lg cursor-pointer`}
       role="button"
       tabIndex={0}
       onClick={() => onRemove(toast.id)}
