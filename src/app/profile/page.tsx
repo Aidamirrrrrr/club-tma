@@ -533,8 +533,8 @@ export default function ProfilePage() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-purple-500/15 to-pink-500/15">
-                      <InstagramIcon className="h-4.5 w-4.5 text-pink-600" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                      <InstagramIcon className="h-4.5 w-4.5 text-primary" />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground">Instagram</p>
@@ -549,8 +549,8 @@ export default function ProfilePage() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-500/10">
-                      <TelegramIcon className="h-4.5 w-4.5 text-sky-500" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                      <TelegramIcon className="h-4.5 w-4.5 text-primary" />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground">Telegram</p>
@@ -563,8 +563,8 @@ export default function ProfilePage() {
                     href={`tel:${profile.phone}`}
                     className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10">
-                      <Phone className="h-4 w-4 text-emerald-600" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+                      <Phone className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground">Телефон</p>
