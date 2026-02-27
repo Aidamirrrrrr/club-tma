@@ -1,45 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import {
   CalendarDays,
-  Users,
   ChevronRight,
+  MapPin,
   TrendingUp,
   UserCheck,
-  MapPin,
+  Users,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useTelegram } from "@/components/telegram-provider";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   AnimatedCounter,
-  StatCardSkeleton,
-  EventCardSkeleton,
   EmptyState,
+  EventCardSkeleton,
+  StatCardSkeleton,
 } from "@/components/ui/animated";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { PageLoader } from "@/components/ui/spinner";
-import { format, parseISO } from "date-fns";
-import { ru } from "date-fns/locale";
-
-const statusLabels: Record<string, string> = {
-  open: "Открыта регистрация",
-  closed: "Закрыта",
-  cancelled: "Отменено",
-  completed: "Завершено",
-};
-
-const statusVariants: Record<
-  string,
-  "success" | "warning" | "danger" | "default"
-> = {
-  open: "success",
-  closed: "warning",
-  cancelled: "danger",
-  completed: "default",
-};
+import { formatDate, statusLabels, statusVariants } from "@/lib/utils";
 
 interface EventPreview {
   id: number;
@@ -62,17 +44,19 @@ interface Stats {
 }
 
 export default function HomePage() {
-  const { dbUser, isLoading } = useTelegram();
+  const { dbUser, isLoading, authHeaders } = useTelegram();
   const [events, setEvents] = useState<EventPreview[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
+    if (isLoading || !dbUser) return;
     async function load() {
       try {
+        const headers = authHeaders();
         const [eventsRes, statsRes] = await Promise.all([
-          fetch("/api/events?filter=upcoming"),
-          fetch("/api/stats"),
+          fetch("/api/events?filter=upcoming", { headers }),
+          fetch("/api/stats", { headers }),
         ]);
         if (eventsRes.ok) {
           const data = await eventsRes.json();
@@ -88,7 +72,7 @@ export default function HomePage() {
       }
     }
     load();
-  }, []);
+  }, [isLoading, dbUser, authHeaders]);
 
   if (isLoading) return <PageLoader />;
 
@@ -230,9 +214,11 @@ export default function HomePage() {
                   className={`card-interactive animate-slide-up stagger-${Math.min(index + 6, 10)} flex w-full flex-col gap-2.5 overflow-hidden p-0`}
                 >
                   {event.coverUrl && (
-                    <img
+                    <Image
                       src={event.coverUrl}
                       alt={event.title}
+                      width={800}
+                      height={400}
                       className="h-48 w-full object-cover"
                     />
                   )}
@@ -283,12 +269,4 @@ export default function HomePage() {
       </section>
     </div>
   );
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    return format(parseISO(dateStr), "d MMM yyyy", { locale: ru });
-  } catch {
-    return dateStr;
-  }
 }

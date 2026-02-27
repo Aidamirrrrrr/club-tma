@@ -1,27 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import {
   CalendarDays,
-  MapPin,
-  Users,
   Edit,
-  Trash2,
+  MapPin,
   Share2,
-  UserCheck,
-  UserX,
   Star,
+  Trash2,
+  UserCheck,
+  Users,
+  UserX,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 import { useTelegram } from "@/components/telegram-provider";
-import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageLoader } from "@/components/ui/spinner";
-import { format, parseISO } from "date-fns";
-import { ru } from "date-fns/locale";
-import Link from "next/link";
+import { useToast } from "@/components/ui/toast";
+import {
+  formatDate,
+  getInitials,
+  statusLabels,
+  statusVariants,
+} from "@/lib/utils";
 
 interface Participant {
   id: number;
@@ -46,30 +53,10 @@ interface EventDetail {
   participantCount: number;
 }
 
-const statusLabels: Record<string, string> = {
-  open: "Открыта регистрация",
-  closed: "Закрыта",
-  cancelled: "Отменено",
-  completed: "Завершено",
-};
-
-const statusVariants: Record<
-  string,
-  "success" | "warning" | "danger" | "default"
-> = {
-  open: "success",
-  closed: "warning",
-  cancelled: "danger",
-  completed: "default",
-};
-
-function getInitials(firstName: string, lastName: string): string {
-  return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
-}
-
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { toast } = useToast();
   const {
     dbUser,
     isAdmin,
@@ -79,23 +66,24 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const isRegistered = event?.participants?.some((p) => p.id === dbUser?.id);
 
-  const loadEvent = async () => {
+  const loadEvent = useCallback(async () => {
     try {
-      const res = await fetch(`/api/events/${id}`);
+      const res = await fetch(`/api/events/${id}`, { headers: authHeaders() });
       if (res.ok) setEvent(await res.json());
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, authHeaders]);
 
   useEffect(() => {
-    loadEvent();
-  }, [id]);
+    if (!authLoading && dbUser) loadEvent();
+  }, [loadEvent, authLoading, dbUser]);
 
   const handleRegister = async () => {
     if (!dbUser || !event) return;
@@ -105,9 +93,16 @@ export default function EventDetailPage() {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
       });
-      if (res.ok) await loadEvent();
+      if (res.ok) {
+        toast("Вы зарегистрированы!", "success");
+        await loadEvent();
+      } else {
+        const data = await res.json();
+        toast(data.error || "Ошибка регистрации", "error");
+      }
     } catch (e) {
       console.error(e);
+      toast("Ошибка сети", "error");
     } finally {
       setActionLoading(false);
     }
@@ -121,9 +116,16 @@ export default function EventDetailPage() {
         method: "DELETE",
         headers: authHeaders(),
       });
-      if (res.ok) await loadEvent();
+      if (res.ok) {
+        toast("Регистрация отменена", "info");
+        await loadEvent();
+      } else {
+        const data = await res.json();
+        toast(data.error || "Ошибка", "error");
+      }
     } catch (e) {
       console.error(e);
+      toast("Ошибка сети", "error");
     } finally {
       setActionLoading(false);
     }
@@ -131,15 +133,22 @@ export default function EventDetailPage() {
 
   const handleDelete = async () => {
     if (!event) return;
-    if (!confirm("Удалить мероприятие?")) return;
     try {
       const res = await fetch(`/api/events/${event.id}`, {
         method: "DELETE",
         headers: authHeaders(),
       });
-      if (res.ok) router.push("/events");
+      if (res.ok) {
+        toast("Мероприятие удалено", "success");
+        router.push("/events");
+      } else {
+        toast("Ошибка удаления", "error");
+      }
     } catch (e) {
       console.error(e);
+      toast("Ошибка сети", "error");
+    } finally {
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -163,9 +172,11 @@ export default function EventDetailPage() {
     <div className="flex flex-col gap-5 pb-6">
       {event.coverUrl && (
         <div className="animate-scale-in -mx-4 -mt-28 lg:-mt-8">
-          <img
+          <Image
             src={event.coverUrl}
             alt={event.title}
+            width={800}
+            height={400}
             className="h-72 w-full rounded-b-3xl object-cover shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]"
           />
         </div>
@@ -190,7 +201,7 @@ export default function EventDetailPage() {
                 <CalendarDays className="h-4 w-4 text-primary-foreground" />
               </div>
               <span className="text-muted-foreground">
-                {formatDate(event.date)}
+                {formatDate(event.date, "d MMMM yyyy")}
                 {event.time && `, ${event.time}`}
               </span>
             </span>
@@ -262,7 +273,10 @@ export default function EventDetailPage() {
                   Редактировать
                 </Button>
               </Link>
-              <Button variant="destructive" onClick={handleDelete}>
+              <Button
+                variant="destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
@@ -334,14 +348,15 @@ export default function EventDetailPage() {
           )}
         </section>
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Удалить мероприятие?"
+        description="Это действие нельзя отменить. Все регистрации будут удалены."
+        confirmLabel="Удалить"
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    return format(parseISO(dateStr), "d MMMM yyyy", { locale: ru });
-  } catch {
-    return dateStr;
-  }
 }

@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Camera, ImagePlus, Trash2 } from "lucide-react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { useTelegram } from "@/components/telegram-provider";
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import { FormField, FormTextarea } from "@/components/ui/form-field";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PageLoader } from "@/components/ui/spinner";
+import { TimePicker } from "@/components/ui/time-picker";
 
 export default function EditEventPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +25,8 @@ export default function EditEventPage() {
   const { isAdmin, isLoading, authHeaders } = useTelegram();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -35,7 +41,9 @@ export default function EditEventPage() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch(`/api/events/${id}`);
+        const res = await fetch(`/api/events/${id}`, {
+          headers: authHeaders(),
+        });
         if (res.ok) {
           const data = await res.json();
           setForm({
@@ -57,8 +65,8 @@ export default function EditEventPage() {
         setLoading(false);
       }
     }
-    load();
-  }, [id]);
+    if (!isLoading) load();
+  }, [id, isLoading, authHeaders]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -66,6 +74,29 @@ export default function EditEventPage() {
     >,
   ) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: authHeaders(),
+        body: formData,
+      });
+      if (res.ok) {
+        const { url } = await res.json();
+        setForm((prev) => ({ ...prev, coverUrl: url }));
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -125,22 +156,17 @@ export default function EditEventPage() {
           placeholder="Полное описание"
         />
         <div className="grid grid-cols-2 gap-3">
-          <FormField
+          <DatePicker
             label="Дата *"
-            name="date"
             id="date"
-            type="date"
             value={form.date}
-            onChange={handleChange}
-            required
+            onChange={(val) => setForm((prev) => ({ ...prev, date: val }))}
           />
-          <FormField
+          <TimePicker
             label="Время"
-            name="time"
             id="time"
-            type="time"
             value={form.time}
-            onChange={handleChange}
+            onChange={(val) => setForm((prev) => ({ ...prev, time: val }))}
           />
         </div>
         <FormField
@@ -151,14 +177,69 @@ export default function EditEventPage() {
           onChange={handleChange}
           placeholder="Адрес или онлайн"
         />
-        <FormField
-          label="URL обложки"
-          name="coverUrl"
-          id="coverUrl"
-          value={form.coverUrl}
-          onChange={handleChange}
-          placeholder="https://..."
-        />
+        {/* Cover upload */}
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="cover-upload-edit" className="text-sm font-medium">
+            Обложка
+          </label>
+          <input
+            id="cover-upload-edit"
+            ref={coverInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleCoverUpload}
+          />
+          {form.coverUrl ? (
+            <div className="relative h-40 w-full overflow-hidden rounded-xl">
+              <Image
+                src={form.coverUrl}
+                alt="Обложка"
+                fill
+                className="object-cover"
+                unoptimized
+              />
+              <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/30">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => coverInputRef.current?.click()}
+                  disabled={uploading}
+                >
+                  <Camera className="h-3.5 w-3.5" />
+                  Заменить
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setForm((prev) => ({ ...prev, coverUrl: "" }))}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => coverInputRef.current?.click()}
+              disabled={uploading}
+              className="flex h-40 w-full flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-border transition-colors hover:bg-muted/50"
+            >
+              {uploading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground" />
+              ) : (
+                <>
+                  <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    Загрузить обложку
+                  </span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
         <FormField
           label="Макс. участников"
           name="maxParticipants"

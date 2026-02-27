@@ -1,8 +1,8 @@
-import { createHmac } from "node:crypto";
-import { db } from "@/db";
-import { users } from "@/db/schema";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { eq } from "drizzle-orm";
+import { db } from "@/db";
 import type { User } from "@/db/schema";
+import { users } from "@/db/schema";
 
 /**
  * Validate Telegram WebApp initData using HMAC-SHA256.
@@ -21,6 +21,17 @@ export function validateInitData(initData: string): boolean {
   const hash = params.get("hash");
   if (!hash) return false;
 
+  // Check auth_date expiration (max 24 hours)
+  const authDate = params.get("auth_date");
+  if (authDate) {
+    const authTimestamp = Number(authDate);
+    const now = Math.floor(Date.now() / 1000);
+    const MAX_AGE_SECONDS = 86400; // 24 hours
+    if (now - authTimestamp > MAX_AGE_SECONDS) {
+      return false;
+    }
+  }
+
   // Remove hash from params and sort alphabetically
   params.delete("hash");
   const dataCheckString = Array.from(params.entries())
@@ -36,15 +47,18 @@ export function validateInitData(initData: string): boolean {
     .update(dataCheckString)
     .digest("hex");
 
-  return computedHash === hash;
+  // Timing-safe comparison to prevent timing attacks
+  if (computedHash.length !== hash.length) return false;
+  const a = Buffer.from(computedHash, "hex");
+  const b = Buffer.from(hash, "hex");
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
 }
 
 /**
  * Parse user data from initData string.
  */
-export function parseInitDataUser(
-  initData: string,
-): {
+export function parseInitDataUser(initData: string): {
   id: number;
   first_name: string;
   last_name?: string;
@@ -80,13 +94,15 @@ export async function getAuthUser(request: Request): Promise<User | null> {
     return user ?? null;
   }
 
-  // Fallback: userId header (trusted after auth on client side)
-  const userId = request.headers.get("x-user-id");
-  if (userId) {
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, Number(userId)),
-    });
-    return user ?? null;
+  // Fallback: userId header — only allowed in development (no BOT_TOKEN)
+  if (process.env.NODE_ENV === "development" && !process.env.BOT_TOKEN) {
+    const userId = request.headers.get("x-user-id");
+    if (userId) {
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, Number(userId)),
+      });
+      return user ?? null;
+    }
   }
 
   return null;

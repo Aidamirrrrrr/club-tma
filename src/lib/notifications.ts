@@ -1,7 +1,7 @@
-import type { User, Event } from "@/db/schema";
-import { db } from "@/db";
-import { registrations, users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import type { Event, User } from "@/db/schema";
+import { registrations, users } from "@/db/schema";
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
@@ -91,6 +91,6 @@ export async function notifyEventStatusChange(event: Event, newStatus: string) {
   await Promise.allSettled(
     regs
       .filter((r) => r.user?.telegramId)
-      .map((r) => sendTelegramMessage(r.user!.telegramId, msg)),
+      .map((r) => sendTelegramMessage(r.user?.telegramId, msg)),
   );
 }

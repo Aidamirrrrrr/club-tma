@@ -1,17 +1,34 @@
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { events } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { requireAdmin } from "@/lib/telegram";
 import { notifyEventStatusChange } from "@/lib/notifications";
+import { requireAdmin, requireAuth } from "@/lib/telegram";
+import {
+  EVENT_STATUSES,
+  isOneOf,
+  isValidDate,
+  isValidTime,
+  parseId,
+  parseIntClamped,
+  sanitizeRequiredText,
+  sanitizeText,
+  sanitizeUrl,
+} from "@/lib/validation";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
-    const eventId = Number(id);
+    const eventId = parseId(id);
+    if (Number.isNaN(eventId)) {
+      return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
+    }
 
     const event = await db.query.events.findFirst({
       where: eq(events.id, eventId),
@@ -61,35 +78,84 @@ export async function PATCH(
     if (auth.error) return auth.error;
 
     const { id } = await params;
+    const eventId = parseId(id);
+    if (Number.isNaN(eventId)) {
+      return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
+    }
+
     const body = await request.json();
 
-    const allowedFields = [
-      "title",
-      "description",
-      "date",
-      "time",
-      "location",
-      "coverUrl",
-      "maxParticipants",
-      "status",
-    ];
-
+    // Validate and sanitize each field individually
     const updates: Record<string, unknown> = {};
-    for (const key of allowedFields) {
-      if (key in body) {
-        updates[key] = body[key];
+
+    if ("title" in body) {
+      const title = sanitizeRequiredText(body.title, 200);
+      if (!title) {
+        return NextResponse.json(
+          { error: "Title cannot be empty (max 200 chars)" },
+          { status: 400 },
+        );
       }
+      updates.title = title;
+    }
+    if ("description" in body) {
+      updates.description = sanitizeText(body.description, 5000) || "";
+    }
+    if ("date" in body) {
+      if (!isValidDate(body.date)) {
+        return NextResponse.json(
+          { error: "Invalid date format" },
+          { status: 400 },
+        );
+      }
+      updates.date = body.date;
+    }
+    if ("time" in body) {
+      if (!isValidTime(body.time)) {
+        return NextResponse.json(
+          { error: "Invalid time format" },
+          { status: 400 },
+        );
+      }
+      updates.time = body.time;
+    }
+    if ("location" in body) {
+      updates.location = sanitizeText(body.location, 500) || "";
+    }
+    if ("coverUrl" in body) {
+      updates.coverUrl = sanitizeUrl(body.coverUrl);
+    }
+    if ("maxParticipants" in body) {
+      updates.maxParticipants = parseIntClamped(
+        body.maxParticipants,
+        0,
+        10000,
+        0,
+      );
+    }
+    if ("status" in body) {
+      if (!isOneOf(body.status, EVENT_STATUSES)) {
+        return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+      }
+      updates.status = body.status;
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json(
+        { error: "No valid fields to update" },
+        { status: 400 },
+      );
     }
 
     // Fetch old event to detect status change
     const oldEvent = await db.query.events.findFirst({
-      where: eq(events.id, Number(id)),
+      where: eq(events.id, eventId),
     });
 
     const [updated] = await db
       .update(events)
       .set(updates)
-      .where(eq(events.id, Number(id)))
+      .where(eq(events.id, eventId))
       .returning();
 
     if (!updated) {
@@ -120,10 +186,14 @@ export async function DELETE(
     if (auth.error) return auth.error;
 
     const { id } = await params;
+    const eventId = parseId(id);
+    if (Number.isNaN(eventId)) {
+      return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
+    }
 
     const [deleted] = await db
       .delete(events)
-      .where(eq(events.id, Number(id)))
+      .where(eq(events.id, eventId))
       .returning();
 
     if (!deleted) {

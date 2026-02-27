@@ -1,7 +1,7 @@
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "../src/db/schema";
-import { eq, and } from "drizzle-orm";
 
 const connectionString =
   process.env.DATABASE_URL ??

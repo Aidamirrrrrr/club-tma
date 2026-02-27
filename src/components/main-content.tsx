@@ -1,17 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useTelegram } from "@/components/telegram-provider";
 import type { ReactNode } from "react";
+import { useEffect } from "react";
+import { useTelegram } from "@/components/telegram-provider";
 
 export function MainContent({ children }: { children: ReactNode }) {
   const { safeAreaBottom } = useTelegram();
-  const pathname = usePathname();
+  const _pathname = usePathname();
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [pathname]);
+  }, []);
 
   const bottomPadding = safeAreaBottom > 0 ? safeAreaBottom + 80 : 96; // 80 for nav, 96px = pb-24 fallback
 

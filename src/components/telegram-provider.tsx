@@ -1,29 +1,29 @@
 "use client";
 
 import {
-  createContext,
-  useContext,
-  useCallback,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
-import { useRouter, usePathname } from "next/navigation";
-import {
-  init,
-  miniApp,
   backButton,
-  setDebug,
-  retrieveRawInitData,
-  initDataUser,
-  mountViewport,
   expandViewport,
+  init,
+  initDataUser,
+  miniApp,
+  mountViewport,
   requestFullscreen,
-  viewportSafeAreaInsetTop,
-  viewportSafeAreaInsetBottom,
-  viewportContentSafeAreaInsetTop,
+  retrieveRawInitData,
+  setDebug,
   viewportContentSafeAreaInsetBottom,
+  viewportContentSafeAreaInsetTop,
+  viewportSafeAreaInsetBottom,
+  viewportSafeAreaInsetTop,
 } from "@telegram-apps/sdk-react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import type { User } from "@/db/schema";
 
 interface TelegramUser {
@@ -115,8 +115,9 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
   const [safeAreaTop, setSafeAreaTop] = useState(0);
   const [safeAreaBottom, setSafeAreaBottom] = useState(0);
   const [rawInitData, setRawInitData] = useState<string | undefined>();
+  const bootstrappedRef = useRef(false);
 
-  const authHeaders = useCallback((): Record<string, string> => {
+  const authHeaders = (): Record<string, string> => {
     const headers: Record<string, string> = {};
     if (rawInitData) {
       headers["x-telegram-init-data"] = rawInitData;
@@ -124,7 +125,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       headers["x-user-id"] = String(dbUser.id);
     }
     return headers;
-  }, [rawInitData, dbUser]);
+  };
 
   const fetchOrCreateUser = async (
     tgUserData: TelegramUser,
@@ -151,10 +152,12 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const refetchUser = useCallback(async () => {
+  const refetchUser = async () => {
     if (!dbUser) return;
     try {
-      const res = await fetch(`/api/users/${dbUser.id}`);
+      const res = await fetch(`/api/users/${dbUser.id}`, {
+        headers: authHeaders(),
+      });
       if (res.ok) {
         const data = await res.json();
         setDbUser(data);
@@ -162,7 +165,7 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
     } catch (e) {
       console.error("Refetch error:", e);
     }
-  }, [dbUser]);
+  };
 
   useEffect(() => {
     const bootstrap = async () => {
@@ -275,8 +278,11 @@ export function TelegramProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     };
 
+    if (bootstrappedRef.current) return;
+    bootstrappedRef.current = true;
     bootstrap();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchOrCreateUser]);
 
   return (
     <TelegramContext.Provider

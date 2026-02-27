@@ -1,72 +1,34 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import {
-  Phone,
   CalendarDays,
-  Pencil,
-  Save,
-  X,
-  Star,
   Camera,
   ImagePlus,
+  Pencil,
+  Phone,
+  Save,
+  Star,
   Trash2,
+  X,
 } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { InstagramIcon, TelegramIcon } from "@/components/icons";
 import { useTelegram } from "@/components/telegram-provider";
-import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { FormField, FormTextarea } from "@/components/ui/form-field";
+import { Input } from "@/components/ui/input";
 import { PageLoader } from "@/components/ui/spinner";
-import { format, parseISO } from "date-fns";
-import { ru } from "date-fns/locale";
-import Link from "next/link";
-
-/* ── Brand Icons ── */
-function InstagramIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0z"
-        fill="currentColor"
-      />
-      <path
-        d="M12 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8z"
-        fill="currentColor"
-      />
-      <circle cx="18.406" cy="5.594" r="1.44" fill="currentColor" />
-    </svg>
-  );
-}
-
-function TelegramIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
-    </svg>
-  );
-}
-
-/* ── Background helpers ── */
-const defaultGradient =
-  "linear-gradient(to bottom, oklch(0.881 0.18 130.6 / 0.12), transparent)";
-
-function isImageUrl(value: string | undefined): boolean {
-  if (!value) return false;
-  return value.startsWith("/") || value.startsWith("http");
-}
+import { useToast } from "@/components/ui/toast";
+import {
+  defaultGradient,
+  formatDate,
+  getInitials,
+  isImageUrl,
+} from "@/lib/utils";
 
 /* ── Types ── */
 interface UserEvent {
@@ -91,10 +53,6 @@ interface ProfileData {
   events: UserEvent[];
 }
 
-function getInitials(firstName: string, lastName: string): string {
-  return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
-}
-
 export default function ProfilePage() {
   const { dbUser, isLoading, refetchUser, authHeaders } = useTelegram();
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -105,6 +63,7 @@ export default function ProfilePage() {
   const [uploadingBg, setUploadingBg] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
+  const toast = useToast();
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -119,7 +78,9 @@ export default function ProfilePage() {
   const loadProfile = async () => {
     if (!dbUser) return;
     try {
-      const res = await fetch(`/api/users/${dbUser.id}`);
+      const res = await fetch(`/api/users/${dbUser.id}`, {
+        headers: authHeaders(),
+      });
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
@@ -147,6 +108,7 @@ export default function ProfilePage() {
     } else if (!isLoading) {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbUser, isLoading]);
 
   const handleChange = (
@@ -198,6 +160,7 @@ export default function ProfilePage() {
       });
       if (res.ok) {
         setEditing(false);
+        toast.success("Профиль сохранён");
         await loadProfile();
         await refetchUser();
       }
@@ -259,7 +222,11 @@ export default function ProfilePage() {
     return (
       <div className="animate-fade-in flex flex-col items-center gap-4 py-20 text-center text-muted-foreground">
         <p>Профиль не найден</p>
-        <Button variant="secondary" size="sm" onClick={() => window.location.reload()}>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => window.location.reload()}
+        >
           Попробовать снова
         </Button>
       </div>
@@ -413,6 +380,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-3">
             {isImageUrl(form.profileGradient) ? (
               <div className="relative h-20 w-full overflow-hidden rounded-xl">
+                {/* biome-ignore lint/performance/noImgElement: user-uploaded dynamic content */}
                 <img
                   src={form.profileGradient}
                   alt="Фон"
@@ -635,12 +603,4 @@ export default function ProfilePage() {
       </div>
     </div>
   );
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    return format(parseISO(dateStr), "d MMM yyyy", { locale: ru });
-  } catch {
-    return dateStr;
-  }
 }

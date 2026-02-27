@@ -1,46 +1,48 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { Search, Star, Users as UsersIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Search, Users as UsersIcon, Star } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { useTelegram } from "@/components/telegram-provider";
+import { EmptyState, MemberCardSkeleton } from "@/components/ui/animated";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageLoader } from "@/components/ui/spinner";
-import { MemberCardSkeleton, EmptyState } from "@/components/ui/animated";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { User } from "@/db/schema";
-
-function getInitials(firstName: string, lastName?: string): string {
-  return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
-}
+import { useDebounce } from "@/lib/hooks";
+import { getInitials } from "@/lib/utils";
 
 export default function MembersPage() {
-  const { isLoading } = useTelegram();
+  const { isLoading, authHeaders } = useTelegram();
   const router = useRouter();
   const [members, setMembers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [filter, setFilter] = useState<"all" | "admins">("all");
   const [loadingData, setLoadingData] = useState(true);
 
   const load = useCallback(async () => {
     setLoadingData(true);
     try {
-      const res = await fetch(
-        `/api/users?search=${encodeURIComponent(search)}`,
-      );
+      const params = new URLSearchParams();
+      if (debouncedSearch) params.set("search", debouncedSearch);
+      if (filter === "admins") params.set("role", "admin");
+      const res = await fetch(`/api/users?${params.toString()}`, {
+        headers: authHeaders(),
+      });
       if (res.ok) setMembers(await res.json());
     } catch (e) {
       console.error(e);
     } finally {
       setLoadingData(false);
     }
-  }, [search]);
+  }, [debouncedSearch, filter, authHeaders]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (!isLoading) load();
+  }, [load, isLoading]);
 
   if (isLoading) return <PageLoader />;
 
@@ -82,22 +84,21 @@ export default function MembersPage() {
           <MemberCardSkeleton />
           <MemberCardSkeleton />
         </div>
-      ) : (filter === "admins"
-          ? members.filter((m) => m.role === "admin")
-          : members
-        ).length === 0 ? (
+      ) : members.length === 0 ? (
         <Card className="animate-scale-in">
           <EmptyState icon={UsersIcon} message="Участники не найдены" />
         </Card>
       ) : (
         <div className="flex flex-col gap-2">
-          {(filter === "admins"
-            ? members.filter((m) => m.role === "admin")
-            : members
-          ).map((member, index) => (
+          {members.map((member, index) => (
             <div
               key={member.id}
+              role="button"
+              tabIndex={0}
               onClick={() => router.push(`/members/${member.id}`)}
+              onKeyDown={(e) =>
+                e.key === "Enter" && router.push(`/members/${member.id}`)
+              }
               className={`card-interactive animate-slide-up stagger-${Math.min(index + 1, 10)} flex cursor-pointer items-center gap-3 rounded-2xl border bg-card p-3 shadow-[0_2px_8px_0_rgb(0_0_0/0.06)]`}
             >
               <div className="relative shrink-0">

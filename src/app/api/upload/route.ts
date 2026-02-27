@@ -1,12 +1,30 @@
-import { NextResponse } from "next/server";
-import { writeFile, mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/telegram";
+import {
+  ALLOWED_IMAGE_TYPES,
+  detectImageType,
+  isRateLimited,
+} from "@/lib/validation";
+
+/** Map of detected MIME to canonical extension. */
+const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg": ".jpg",
+  "image/png": ".png",
+  "image/webp": ".webp",
+  "image/gif": ".gif",
+};
 
 export async function POST(request: Request) {
   try {
     const auth = await requireAuth(request);
     if (auth.error) return auth.error;
+
+    // Rate limit: 30 uploads per 10 minutes per user
+    if (isRateLimited(`upload:${auth.user.id}`, 30, 600_000)) {
+      return NextResponse.json({ error: "Too many uploads" }, { status: 429 });
+    }
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
@@ -15,9 +33,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
+    // Validate declared MIME type
+    if (!(file.type in ALLOWED_IMAGE_TYPES)) {
       return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
     }
 
@@ -32,7 +49,17 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    const ext = path.extname(file.name) || ".jpg";
+    // Verify actual file type via magic bytes (prevent MIME spoofing)
+    const detectedType = detectImageType(buffer);
+    if (!detectedType || !(detectedType in ALLOWED_IMAGE_TYPES)) {
+      return NextResponse.json(
+        { error: "File content does not match an allowed image type" },
+        { status: 400 },
+      );
+    }
+
+    // Use extension based on detected type (not user-supplied filename)
+    const ext = MIME_TO_EXT[detectedType] || ".jpg";
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
 
     const uploadDir = path.join(process.cwd(), "public", "uploads");

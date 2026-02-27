@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { CalendarDays, Home, UserCircle, Users } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, CalendarDays, Users, UserCircle } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Главная", icon: Home },

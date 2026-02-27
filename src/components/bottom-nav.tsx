@@ -1,8 +1,8 @@
 "use client";
 
+import { CalendarDays, Home, UserCircle, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, CalendarDays, Users, UserCircle } from "lucide-react";
 import { useTelegram } from "@/components/telegram-provider";
 
 const navItems = [

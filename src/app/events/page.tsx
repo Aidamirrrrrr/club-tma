@@ -1,18 +1,19 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { CalendarDays, MapPin, Plus, Search, Users } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { CalendarDays, Users, MapPin, Search, Plus } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { useTelegram } from "@/components/telegram-provider";
-import { Card } from "@/components/ui/card";
+import { EmptyState, EventCardSkeleton } from "@/components/ui/animated";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageLoader } from "@/components/ui/spinner";
-import { EventCardSkeleton, EmptyState } from "@/components/ui/animated";
-import { format, parseISO } from "date-fns";
-import { ru } from "date-fns/locale";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDebounce } from "@/lib/hooks";
+import { formatDate, statusLabels, statusVariants } from "@/lib/utils";
 
 interface EventItem {
   id: number;
@@ -27,51 +28,37 @@ interface EventItem {
   participantCount: number;
 }
 
-const statusLabels: Record<string, string> = {
-  open: "Открыта регистрация",
-  closed: "Закрыта",
-  cancelled: "Отменено",
-  completed: "Завершено",
-};
-
-const statusVariants: Record<
-  string,
-  "success" | "warning" | "danger" | "default"
-> = {
-  open: "success",
-  closed: "warning",
-  cancelled: "danger",
-  completed: "default",
-};
-
 export default function EventsPage() {
-  const { isAdmin, isLoading, tgUser } = useTelegram();
+  const { isAdmin, isLoading, tgUser, authHeaders } = useTelegram();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [filter, setFilter] = useState<"upcoming" | "past" | "mine">(
     "upcoming",
   );
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
 
   const load = useCallback(async () => {
     setLoadingData(true);
     try {
-      const params = new URLSearchParams({ filter, search });
+      const params = new URLSearchParams({ filter, search: debouncedSearch });
       if (filter === "mine" && tgUser?.id) {
         params.set("telegramId", String(tgUser.id));
       }
-      const res = await fetch(`/api/events?${params.toString()}`);
+      const res = await fetch(`/api/events?${params.toString()}`, {
+        headers: authHeaders(),
+      });
       if (res.ok) setEvents(await res.json());
     } catch (e) {
       console.error(e);
     } finally {
       setLoadingData(false);
     }
-  }, [filter, search, tgUser]);
+  }, [filter, debouncedSearch, tgUser, authHeaders]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (!isLoading) load();
+  }, [load, isLoading]);
 
   if (isLoading) return <PageLoader />;
 
@@ -142,9 +129,11 @@ export default function EventsPage() {
                 className={`card-interactive animate-slide-up stagger-${Math.min(index + 1, 10)} flex flex-col gap-2.5 overflow-hidden p-0`}
               >
                 {event.coverUrl && (
-                  <img
+                  <Image
                     src={event.coverUrl}
                     alt={event.title}
+                    width={800}
+                    height={400}
                     className="h-48 w-full object-cover"
                   />
                 )}
@@ -194,12 +183,4 @@ export default function EventsPage() {
       )}
     </div>
   );
-}
-
-function formatDate(dateStr: string): string {
-  try {
-    return format(parseISO(dateStr), "d MMM yyyy", { locale: ru });
-  } catch {
-    return dateStr;
-  }
 }

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { TelegramProvider } from "@/components/telegram-provider";
 import { BottomNav } from "@/components/bottom-nav";
 import { DesktopSidebar } from "@/components/desktop-sidebar";
-import { TelegramBackButtonManager } from "@/components/telegram-back-button";
 import { MainContent } from "@/components/main-content";
+import { TelegramBackButtonManager } from "@/components/telegram-back-button";
+import { TelegramProvider } from "@/components/telegram-provider";
+import { ToastProvider } from "@/components/ui/toast";
 
 const helveticaNeue = localFont({
   src: [
@@ -45,14 +46,16 @@ export default function RootLayout({
     <html lang="ru">
       <body className={`${helveticaNeue.variable} antialiased`}>
         <TelegramProvider>
-          <TelegramBackButtonManager />
-          <div className="flex min-h-screen lg:h-screen lg:overflow-hidden">
-            <DesktopSidebar />
-            <div className="min-w-0 flex-1 overflow-x-hidden lg:overflow-y-auto">
-              <MainContent>{children}</MainContent>
+          <ToastProvider>
+            <TelegramBackButtonManager />
+            <div className="flex min-h-screen lg:h-screen lg:overflow-hidden">
+              <DesktopSidebar />
+              <div className="min-w-0 flex-1 overflow-x-hidden lg:overflow-y-auto">
+                <MainContent>{children}</MainContent>
+              </div>
             </div>
-          </div>
-          <BottomNav />
+            <BottomNav />
+          </ToastProvider>
         </TelegramProvider>
       </body>
     </html>

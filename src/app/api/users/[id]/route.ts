@@ -1,17 +1,34 @@
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
 import { requireAdmin, requireAuth } from "@/lib/telegram";
+import {
+  isOneOf,
+  parseId,
+  sanitizeHandle,
+  sanitizePhone,
+  sanitizeText,
+  sanitizeUrl,
+  USER_ROLES,
+} from "@/lib/validation";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const auth = await requireAuth(request);
+    if (auth.error) return auth.error;
+
     const { id } = await params;
+    const userId = parseId(id);
+    if (Number.isNaN(userId)) {
+      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
+    }
+
     const user = await db.query.users.findFirst({
-      where: eq(users.id, Number(id)),
+      where: eq(users.id, userId),
       with: {
         registrations: {
           with: {
@@ -50,40 +67,86 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
+    const targetId = parseId(id);
+    if (Number.isNaN(targetId)) {
+      return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
+    }
+
     const body = await request.json();
 
     // Admin-only fields
     const hasAdminFields = "role" in body || "blocked" in body;
+
     if (hasAdminFields) {
       const auth = await requireAdmin(request);
       if (auth.error) return auth.error;
+
+      // Prevent admin from demoting/blocking themselves
+      if (auth.user.id === targetId) {
+        return NextResponse.json(
+          { error: "Cannot modify your own admin status" },
+          { status: 400 },
+        );
+      }
     } else {
       // Regular users can only edit their own profile
       const auth = await requireAuth(request);
       if (auth.error) return auth.error;
-      if (auth.user.id !== Number(id)) {
+      if (auth.user.id !== targetId) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     }
 
-    const allowedFields = [
-      "firstName",
-      "lastName",
-      "bio",
-      "instagram",
-      "telegram",
-      "phone",
-      "photoUrl",
-      "profileGradient",
-      "role",
-      "blocked",
-    ];
-
+    // Sanitize and validate each field individually
     const updates: Record<string, unknown> = {};
-    for (const key of allowedFields) {
-      if (key in body) {
-        updates[key] = body[key];
+
+    if ("firstName" in body) {
+      const v = sanitizeText(body.firstName, 100);
+      if (v) updates.firstName = v;
+    }
+    if ("lastName" in body) {
+      updates.lastName = sanitizeText(body.lastName, 100) || "";
+    }
+    if ("bio" in body) {
+      updates.bio = sanitizeText(body.bio, 1000) || "";
+    }
+    if ("instagram" in body) {
+      updates.instagram = sanitizeHandle(body.instagram, 64);
+    }
+    if ("telegram" in body) {
+      updates.telegram = sanitizeHandle(body.telegram, 64);
+    }
+    if ("phone" in body) {
+      updates.phone = sanitizePhone(body.phone, 30);
+    }
+    if ("photoUrl" in body) {
+      updates.photoUrl = sanitizeUrl(body.photoUrl);
+    }
+    if ("profileGradient" in body) {
+      const val = body.profileGradient;
+      // Allow "default" string or an image URL
+      if (val === "default") {
+        updates.profileGradient = "default";
+      } else {
+        updates.profileGradient = sanitizeUrl(val) || "default";
       }
+    }
+
+    // Admin-only fields (validated above)
+    if ("role" in body && hasAdminFields) {
+      if (!isOneOf(body.role, USER_ROLES)) {
+        return NextResponse.json({ error: "Invalid role" }, { status: 400 });
+      }
+      updates.role = body.role;
+    }
+    if ("blocked" in body && hasAdminFields) {
+      if (typeof body.blocked !== "boolean") {
+        return NextResponse.json(
+          { error: "blocked must be a boolean" },
+          { status: 400 },
+        );
+      }
+      updates.blocked = body.blocked;
     }
 
     if (Object.keys(updates).length === 0) {
@@ -96,7 +159,7 @@ export async function PATCH(
     const [updated] = await db
       .update(users)
       .set(updates)
-      .where(eq(users.id, Number(id)))
+      .where(eq(users.id, targetId))
       .returning();
 
     if (!updated) {

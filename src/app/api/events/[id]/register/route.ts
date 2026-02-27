@@ -1,9 +1,10 @@
+import { and, count, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { events, registrations } from "@/db/schema";
-import { eq, and, count } from "drizzle-orm";
-import { requireAuth } from "@/lib/telegram";
 import { notifyRegistration } from "@/lib/notifications";
+import { requireAuth } from "@/lib/telegram";
+import { isRateLimited, parseId } from "@/lib/validation";
 
 export async function POST(
   request: Request,
@@ -14,7 +15,16 @@ export async function POST(
     if (auth.error) return auth.error;
 
     const { id } = await params;
-    const eventId = Number(id);
+    const eventId = parseId(id);
+    if (Number.isNaN(eventId)) {
+      return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
+    }
+
+    // Rate limit: 30 registration actions per minute per user
+    if (isRateLimited(`register:${auth.user.id}`, 30, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const userId = auth.user.id;
 
     // Fetch event and check status
@@ -90,13 +100,17 @@ export async function DELETE(
     if (auth.error) return auth.error;
 
     const { id } = await params;
+    const eventId = parseId(id);
+    if (Number.isNaN(eventId)) {
+      return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
+    }
 
     const [deleted] = await db
       .delete(registrations)
       .where(
         and(
           eq(registrations.userId, auth.user.id),
-          eq(registrations.eventId, Number(id)),
+          eq(registrations.eventId, eventId),
         ),
       )
       .returning();

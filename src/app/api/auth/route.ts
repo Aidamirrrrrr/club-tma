@@ -1,11 +1,23 @@
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { validateInitData, parseInitDataUser } from "@/lib/telegram";
+import { parseInitDataUser, validateInitData } from "@/lib/telegram";
+import {
+  isRateLimited,
+  sanitizeHandle,
+  sanitizeText,
+  sanitizeUrl,
+} from "@/lib/validation";
 
 export async function POST(request: Request) {
   try {
+    // Basic request size guard
+    const contentLength = request.headers.get("content-length");
+    if (contentLength && Number(contentLength) > 50_000) {
+      return NextResponse.json({ error: "Request too large" }, { status: 413 });
+    }
+
     const body = await request.json();
     const { initData } = body;
 
@@ -16,6 +28,13 @@ export async function POST(request: Request) {
     let photo_url: string | undefined;
 
     if (initData) {
+      if (typeof initData !== "string" || initData.length > 4096) {
+        return NextResponse.json(
+          { error: "Invalid init data" },
+          { status: 400 },
+        );
+      }
+
       if (!validateInitData(initData)) {
         return NextResponse.json(
           { error: "Invalid init data" },
@@ -48,6 +67,17 @@ export async function POST(request: Request) {
       }
     }
 
+    // Rate limit: 30 auth requests per minute per user
+    if (isRateLimited(`auth:${id}`, 30, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
+    // Sanitize inputs
+    const cleanFirstName = sanitizeText(first_name, 100) || "User";
+    const cleanLastName = sanitizeText(last_name, 100) || "";
+    const cleanUsername = sanitizeHandle(username, 64);
+    const cleanPhotoUrl = sanitizeUrl(photo_url);
+
     const telegramId = String(id);
 
     // Check if user exists
@@ -65,10 +95,10 @@ export async function POST(request: Request) {
       const [updated] = await db
         .update(users)
         .set({
-          firstName: first_name,
-          lastName: last_name || "",
-          username: username || "",
-          photoUrl: photo_url || existing.photoUrl,
+          firstName: cleanFirstName,
+          lastName: cleanLastName,
+          username: cleanUsername,
+          photoUrl: cleanPhotoUrl || existing.photoUrl,
         })
         .where(eq(users.telegramId, telegramId))
         .returning();
@@ -81,11 +111,11 @@ export async function POST(request: Request) {
       .insert(users)
       .values({
         telegramId,
-        firstName: first_name,
-        lastName: last_name || "",
-        username: username || "",
-        photoUrl: photo_url || "",
-        telegram: username ? `@${username}` : "",
+        firstName: cleanFirstName,
+        lastName: cleanLastName,
+        username: cleanUsername,
+        photoUrl: cleanPhotoUrl,
+        telegram: cleanUsername ? `@${cleanUsername}` : "",
       })
       .returning();
 
