@@ -275,15 +275,21 @@ export default function ProfilePage() {
   return (
     <div className="flex flex-col gap-5 pb-6">
       <div
-        className="animate-fade-in overflow-clip rounded-b-3xl px-4 pt-8 pb-6 transition-all duration-500 lg:rounded-3xl"
+        className="animate-fade-in overflow-clip rounded-b-3xl px-4 pb-6 transition-all duration-500 lg:rounded-3xl"
         style={
           hasBgImage
             ? {
                 backgroundImage: `linear-gradient(to bottom, transparent 40%, var(--background)), url(${currentBg})`,
                 backgroundSize: "cover",
                 backgroundPosition: "center",
+                paddingTop:
+                  "max(calc(var(--tg-viewport-safe-area-inset-top, 0px) + var(--tg-viewport-content-safe-area-inset-top, 0px) + 32px), 24px)",
               }
-            : { background: defaultGradient }
+            : {
+                background: defaultGradient,
+                paddingTop:
+                  "max(calc(var(--tg-viewport-safe-area-inset-top, 0px) + var(--tg-viewport-content-safe-area-inset-top, 0px) + 32px), 24px)",
+              }
         }
       >
         <div className="flex flex-col items-center gap-3 text-center">
