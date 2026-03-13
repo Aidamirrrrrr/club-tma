@@ -128,7 +128,7 @@ export default function MemberDetailPage() {
   return (
     <div className="flex flex-col gap-5 pb-6">
       <div
-        className="animate-fade-in overflow-clip rounded-b-3xl px-4 pb-6 transition-all duration-500 lg:rounded-3xl"
+        className="animate-fade-in overflow-clip rounded-b-3xl px-4 pt-8 pb-6 transition-all duration-500 lg:rounded-3xl"
         style={
           isImageUrl(member.profileGradient)
             ? {

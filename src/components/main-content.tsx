@@ -28,8 +28,8 @@ export function MainContent({ children }: { children: ReactNode }) {
       className="mx-auto w-full max-w-lg overflow-x-clip lg:max-w-3xl lg:pb-8"
       style={{
         paddingTop: hasTopInset
-          ? `calc(${cssSafeTop} + 56px)`
-          : `max(calc(${cssSafeTop} + 56px), 24px)`,
+          ? `calc(${cssSafeTop} + 32px)`
+          : `max(calc(${cssSafeTop} + 32px), 24px)`,
         paddingBottom: hasBottomInset
           ? `calc(${cssSafeBottom} + 80px)`
           : `max(calc(${cssSafeBottom} + 80px), 96px)`,
