@@ -42,38 +42,42 @@ export async function POST(
       );
     }
 
-    if (event.maxParticipants && event.maxParticipants > 0) {
-      const [{ value: currentCount }] = await db
-        .select({ value: count() })
-        .from(registrations)
-        .where(eq(registrations.eventId, eventId));
+    const reg = await db.transaction(async (tx) => {
+      const existing = await tx.query.registrations.findFirst({
+        where: and(
+          eq(registrations.userId, userId),
+          eq(registrations.eventId, eventId),
+        ),
+      });
 
-      if (currentCount >= event.maxParticipants) {
-        return NextResponse.json(
-          { error: "Все места заняты" },
-          { status: 400 },
-        );
+      if (existing) return "duplicate" as const;
+
+      if (event.maxParticipants && event.maxParticipants > 0) {
+        const [{ value: currentCount }] = await tx
+          .select({ value: count() })
+          .from(registrations)
+          .where(eq(registrations.eventId, eventId));
+
+        if (currentCount >= event.maxParticipants) return "full" as const;
       }
-    }
 
-    const existing = await db.query.registrations.findFirst({
-      where: and(
-        eq(registrations.userId, userId),
-        eq(registrations.eventId, eventId),
-      ),
+      const [inserted] = await tx
+        .insert(registrations)
+        .values({ userId, eventId })
+        .returning();
+      return inserted;
     });
 
-    if (existing) {
+    if (reg === "duplicate") {
       return NextResponse.json(
         { error: "Already registered" },
         { status: 409 },
       );
     }
 
-    const [reg] = await db
-      .insert(registrations)
-      .values({ userId, eventId })
-      .returning();
+    if (reg === "full") {
+      return NextResponse.json({ error: "Все места заняты" }, { status: 400 });
+    }
 
     notifyRegistration(auth.user, event).catch(console.error);
 
@@ -95,6 +99,10 @@ export async function DELETE(
   try {
     const auth = await requireAuth(request);
     if (auth.error) return auth.error;
+
+    if (isRateLimited(`unregister:${auth.user.id}`, 30, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
 
     const { id } = await params;
     const eventId = parseId(id);

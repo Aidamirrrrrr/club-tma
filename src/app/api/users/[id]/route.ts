@@ -5,6 +5,7 @@ import { users } from "@/db/schema";
 import { requireAdmin, requireAuth } from "@/lib/telegram";
 import {
   isOneOf,
+  isRateLimited,
   parseId,
   sanitizeHandle,
   sanitizePhone,
@@ -21,6 +22,10 @@ export async function GET(
   try {
     const auth = await requireAuth(request);
     if (auth.error) return auth.error;
+
+    if (isRateLimited(`users:get:${auth.user.id}`, 60, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
 
     const { id } = await params;
     const userId = parseId(id);
@@ -76,6 +81,10 @@ export async function PATCH(
 
     const body = await request.json();
 
+    if (isRateLimited(`users:update:${targetId}`, 30, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const hasAdminFields = "role" in body || "blocked" in body;
 
     if (hasAdminFields) {
@@ -89,7 +98,6 @@ export async function PATCH(
         );
       }
     } else {
-
       const auth = await requireAuth(request);
       if (auth.error) return auth.error;
       if (auth.user.id !== targetId) {

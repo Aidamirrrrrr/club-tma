@@ -23,6 +23,10 @@ export async function GET(request: Request) {
     const auth = await requireAuth(request);
     if (auth.error) return auth.error;
 
+    if (isRateLimited(`events:list:${auth.user.id}`, 60, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
+
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get("filter") || "upcoming";
     const rawSearch = searchParams.get("search") || "";
@@ -49,7 +53,6 @@ export async function GET(request: Request) {
         ),
       );
     } else if (filter === "mine" && telegramId) {
-
       const userEvents = db
         .select({ eventId: registrations.eventId })
         .from(registrations)
@@ -163,7 +166,7 @@ export async function POST(request: Request) {
         coverUrl: sanitizeUrl(body.coverUrl),
         maxParticipants: parseIntClamped(body.maxParticipants, 0, 10000, 0),
         status,
-        createdBy: auth.user.id, 
+        createdBy: auth.user.id,
       })
       .returning();
 

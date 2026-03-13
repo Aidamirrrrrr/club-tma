@@ -1,36 +1,190 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Club — Telegram Mini App
 
-## Getting Started
+Веб-приложение для управления клубом: мероприятия, участники, профили. Работает как Telegram Mini App с авторизацией через `initData`.
 
-First, run the development server:
+## Стек
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Next.js 16** + React 19, TypeScript
+- **PostgreSQL** + Drizzle ORM
+- **TailwindCSS 4** + Radix UI (shadcn/ui)
+- **Telegram Mini App SDK** (`@telegram-apps/sdk-react`)
+- **Biome** — линтер и форматтер
+- **Docker** — multi-stage production build
+
+## Требования
+
+- Node.js 22+
+- pnpm
+- PostgreSQL
+- Telegram Bot Token (для уведомлений)
+
+## Переменные окружения
+
+| Переменная     | Описание                        | Обязательна |
+| -------------- | ------------------------------- | :---------: |
+| `DATABASE_URL` | Строка подключения к PostgreSQL |      ✓      |
+| `BOT_TOKEN`    | Токен Telegram-бота             |             |
+
+Создайте `.env` файл в корне проекта:
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/club
+BOT_TOKEN=123456789:ABCDefGHijKLmnopqrStuVwxyz
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Запуск
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Установка зависимостей
+pnpm install
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Применение схемы БД
+pnpm db:push
 
-## Learn More
+# Заполнение тестовых данных (опционально)
+pnpm db:seed
 
-To learn more about Next.js, take a look at the following resources:
+# Запуск dev-сервера
+pnpm dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Скрипты
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Команда            | Описание                     |
+| ------------------ | ---------------------------- |
+| `pnpm dev`         | Запуск dev-сервера           |
+| `pnpm build`       | Production-сборка            |
+| `pnpm start`       | Запуск production-сервера    |
+| `pnpm lint`        | Проверка линтером (Biome)    |
+| `pnpm format`      | Форматирование кода (Biome)  |
+| `pnpm db:push`     | Применение схемы к БД        |
+| `pnpm db:generate` | Генерация миграции           |
+| `pnpm db:migrate`  | Применение миграций          |
+| `pnpm db:studio`   | Drizzle Studio (GUI для БД)  |
+| `pnpm db:seed`     | Заполнение тестовыми данными |
 
-## Deploy on Vercel
+## Структура проекта
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/
+│   ├── api/                  # API-роуты (серверная часть)
+│   │   ├── auth/             # Авторизация через Telegram
+│   │   ├── events/           # CRUD мероприятий + регистрация
+│   │   ├── stats/            # Статистика клуба
+│   │   ├── upload/           # Загрузка изображений
+│   │   └── users/            # Пользователи + профили
+│   ├── events/               # Страницы мероприятий
+│   ├── members/              # Страницы участников
+│   └── profile/              # Профиль пользователя
+├── components/
+│   ├── ui/                   # UI-библиотека (shadcn/ui)
+│   ├── bottom-nav.tsx        # Мобильная навигация
+│   ├── desktop-sidebar.tsx   # Десктопный сайдбар
+│   ├── icons.tsx             # SVG-иконки
+│   ├── main-content.tsx      # Обёртка контента
+│   └── telegram.tsx          # Telegram SDK интеграция
+├── db/
+│   ├── index.ts              # Подключение к БД (синглтон)
+│   └── schema.ts             # Drizzle-схема (users, events, registrations)
+└── lib/
+    ├── hooks.ts              # React-хуки (useDebounce)
+    ├── notifications.ts      # Уведомления через Telegram Bot API
+    ├── telegram-store.ts     # Стейт-стор авторизации
+    ├── telegram.ts           # Серверная валидация initData
+    ├── utils.ts              # Утилиты (cn, formatDate, ...)
+    └── validation.ts         # Валидация и санитизация ввода
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## База данных
+
+Три таблицы:
+
+**users** — пользователи клуба
+
+- `telegramId` (уникальный), `firstName`, `lastName`, `username`
+- Профиль: `bio`, `instagram`, `telegram`, `phone`, `photoUrl`, `profileGradient`
+- Роли: `user` | `admin`
+- Блокировка: `blocked`
+
+**events** — мероприятия
+
+- `title`, `description`, `date`, `time`, `location`, `coverUrl`
+- `maxParticipants` — лимит участников (0 = без лимита)
+- Статусы: `open` | `closed` | `cancelled` | `completed`
+- `createdBy` → users
+
+**registrations** — регистрации на мероприятия
+
+- `userId` → users, `eventId` → events
+- Уникальный constraint на пару (userId, eventId)
+- CASCADE DELETE при удалении пользователя или мероприятия
+
+## API
+
+### Авторизация
+
+| Метод  | Путь        | Описание                   | Доступ    |
+| ------ | ----------- | -------------------------- | --------- |
+| `POST` | `/api/auth` | Авторизация через Telegram | Публичный |
+
+### Мероприятия
+
+| Метод    | Путь                       | Описание                   | Доступ   |
+| -------- | -------------------------- | -------------------------- | -------- |
+| `GET`    | `/api/events`              | Список мероприятий         | Авториз. |
+| `POST`   | `/api/events`              | Создание мероприятия       | Админ    |
+| `GET`    | `/api/events/:id`          | Детали мероприятия         | Авториз. |
+| `PATCH`  | `/api/events/:id`          | Обновление мероприятия     | Админ    |
+| `POST`   | `/api/events/:id/register` | Регистрация на мероприятие | Авториз. |
+| `DELETE` | `/api/events/:id/register` | Отмена регистрации         | Авториз. |
+
+### Пользователи
+
+| Метод   | Путь             | Описание                        | Доступ       |
+| ------- | ---------------- | ------------------------------- | ------------ |
+| `GET`   | `/api/users`     | Список пользователей            | Авториз.     |
+| `GET`   | `/api/users/:id` | Профиль с историей мероприятий  | Авториз.     |
+| `PATCH` | `/api/users/:id` | Обновление профиля / управление | Свой / Админ |
+
+### Прочее
+
+| Метод  | Путь          | Описание                      | Доступ   |
+| ------ | ------------- | ----------------------------- | -------- |
+| `GET`  | `/api/stats`  | Статистика клуба              | Авториз. |
+| `POST` | `/api/upload` | Загрузка изображения (≤ 5 МБ) | Авториз. |
+
+## Страницы
+
+| Путь               | Описание                                    |
+| ------------------ | ------------------------------------------- |
+| `/`                | Главная — статистика, ближайшие мероприятия |
+| `/events`          | Список мероприятий с фильтрами и поиском    |
+| `/events/create`   | Создание мероприятия (админ)                |
+| `/events/:id`      | Детали мероприятия, участники, регистрация  |
+| `/events/:id/edit` | Редактирование мероприятия (админ)          |
+| `/members`         | Список участников с поиском                 |
+| `/members/:id`     | Профиль участника, история мероприятий      |
+| `/profile`         | Редактирование своего профиля               |
+
+## Docker
+
+```bash
+# Сборка
+docker build -t club .
+
+# Запуск
+docker run -p 3000:3000 \
+  -e DATABASE_URL=postgresql://user:pass@host:5432/club \
+  -e BOT_TOKEN=your_bot_token \
+  club
+```
+
+## Безопасность
+
+- HMAC-SHA256 валидация Telegram `initData`
+- Санитизация всех входных данных (XSS, SQL injection)
+- Magic bytes валидация загружаемых файлов
+- Rate limiting на критичных эндпоинтах
+- Транзакции для атомарных операций (регистрация)
+- Ролевая модель доступа (user / admin)

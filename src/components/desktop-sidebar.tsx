@@ -19,7 +19,6 @@ export function DesktopSidebar() {
   return (
     <aside className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:border-r lg:border-border bg-card">
       <div className="flex h-full flex-col gap-2 px-4 py-6">
-
         <div className="mb-6 flex items-center gap-3 px-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-sm">
             <Image src="/logo.png" alt="Клуб" width={22} height={22} />

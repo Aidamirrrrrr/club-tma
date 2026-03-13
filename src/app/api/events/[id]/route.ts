@@ -7,6 +7,7 @@ import { requireAdmin, requireAuth } from "@/lib/telegram";
 import {
   EVENT_STATUSES,
   isOneOf,
+  isRateLimited,
   isValidDate,
   isValidTime,
   parseId,
@@ -24,6 +25,10 @@ export async function GET(
   try {
     const auth = await requireAuth(request);
     if (auth.error) return auth.error;
+
+    if (isRateLimited(`events:get:${auth.user.id}`, 60, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
 
     const { id } = await params;
     const eventId = parseId(id);
@@ -78,6 +83,10 @@ export async function PATCH(
   try {
     const auth = await requireAdmin(request);
     if (auth.error) return auth.error;
+
+    if (isRateLimited(`events:update:${auth.user.id}`, 30, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
 
     const { id } = await params;
     const eventId = parseId(id);
@@ -184,6 +193,10 @@ export async function DELETE(
   try {
     const auth = await requireAdmin(request);
     if (auth.error) return auth.error;
+
+    if (isRateLimited(`events:delete:${auth.user.id}`, 10, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
 
     const { id } = await params;
     const eventId = parseId(id);

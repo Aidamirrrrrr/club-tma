@@ -8,7 +8,7 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 /** Отправляет сообщение через Telegram Bot API. */
 async function sendTelegramMessage(chatId: string, text: string) {
   if (!BOT_TOKEN) {
-    console.log(`[notify skip] No BOT_TOKEN. chatId=${chatId} text=${text}`);
+    console.log("[notify skip] No BOT_TOKEN");
     return;
   }
 
@@ -75,14 +75,14 @@ export async function notifyEventStatusChange(event: Event, newStatus: string) {
     with: { user: true },
   });
 
-  const statusLabels: Record<string, string> = {
+  const labels: Record<string, string> = {
     open: "открыто",
     closed: "закрыто",
     cancelled: "отменено",
     completed: "завершено",
   };
 
-  const statusLabel = statusLabels[newStatus] || newStatus;
+  const statusLabel = labels[newStatus] || newStatus;
 
   const msg =
     `📢 <b>Статус мероприятия изменён</b>\n\n` +

@@ -77,7 +77,6 @@ export default function EventsPage() {
         )}
       </div>
 
-      
       <div className="animate-slide-up stagger-1 relative">
         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -89,7 +88,6 @@ export default function EventsPage() {
         />
       </div>
 
-      
       <Tabs
         className="animate-slide-up stagger-2"
         value={filter}
@@ -102,7 +100,6 @@ export default function EventsPage() {
         </TabsList>
       </Tabs>
 
-      
       {loadingData ? (
         <div className="flex flex-col gap-3">
           <EventCardSkeleton />

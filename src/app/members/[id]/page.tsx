@@ -10,7 +10,7 @@ import {
   Star,
 } from "lucide-react";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { InstagramIcon, TelegramIcon } from "@/components/icons";
 import { useTelegram } from "@/components/telegram";
@@ -54,7 +54,6 @@ interface MemberDetail {
 
 export default function MemberDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const _router = useRouter();
   const { isAdmin, isLoading: authLoading, authHeaders } = useTelegram();
   const [member, setMember] = useState<MemberDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -128,7 +127,6 @@ export default function MemberDetailPage() {
 
   return (
     <div className="flex flex-col gap-5 pb-6">
-      
       <div
         className="animate-fade-in overflow-clip rounded-b-3xl px-4 pb-6 transition-all duration-500 lg:rounded-3xl"
         style={
@@ -193,10 +191,8 @@ export default function MemberDetailPage() {
       </div>
 
       <div className="flex flex-col gap-5 px-4">
-
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
           <div className="flex flex-col gap-5">
-
             {(member.instagram || member.telegram || member.phone) && (
               <Card className="animate-slide-up stagger-2 flex flex-col gap-0 divide-y divide-border p-0">
                 {member.instagram && (
@@ -255,7 +251,6 @@ export default function MemberDetailPage() {
               </Card>
             )}
 
-            
             {isAdmin && (
               <div className="animate-slide-up stagger-3 flex flex-col gap-2">
                 <Button
@@ -292,7 +287,6 @@ export default function MemberDetailPage() {
             )}
           </div>
 
-          
           <section className="animate-slide-up stagger-4">
             <h2 className="mb-3 text-base font-semibold tracking-tight">
               История мероприятий ({member.events?.length || 0})

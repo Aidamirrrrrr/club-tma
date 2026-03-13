@@ -17,6 +17,7 @@ function Textarea({
     el.style.height = `${el.scrollHeight}px`;
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: props.value нужен для пересчёта высоты
   useEffect(() => {
     resize();
   }, [resize, props.value]);

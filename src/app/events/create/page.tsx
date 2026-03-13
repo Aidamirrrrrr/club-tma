@@ -157,7 +157,7 @@ function CreateEventForm() {
           onChange={handleChange}
           placeholder="Адрес или онлайн"
         />
-        
+
         <div className="flex flex-col gap-1.5">
           <label htmlFor="cover-upload-create" className="text-sm font-medium">
             Обложка

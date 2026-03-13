@@ -102,13 +102,13 @@ export default function ProfilePage() {
     }
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: loadProfile зависит от dbUser
   useEffect(() => {
     if (dbUser) {
       loadProfile();
     } else if (!isLoading) {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbUser, isLoading]);
 
   const handleChange = (
@@ -118,18 +118,15 @@ export default function ProfilePage() {
     let masked = value;
 
     if (name === "instagram" || name === "telegram") {
-
       masked = value.replace(/[^a-zA-Z0-9._]/g, "");
       if (masked && !masked.startsWith("@")) masked = `@${masked}`;
       if (masked === "@") masked = "";
     } else if (name === "phone") {
-
       const raw = value.replace(/[^\d+]/g, "");
       if (raw.startsWith("+") || raw.length > 0) {
         const plus = raw.startsWith("+");
         const digits = raw.replace(/\D/g, "");
         if (digits.length > 0) {
-
           let formatted = "+";
           const d = digits.slice(0, 15);
           for (let i = 0; i < d.length; i += 3) {
@@ -277,7 +274,6 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-5 pb-6">
-      
       <div
         className="animate-fade-in overflow-clip rounded-b-3xl px-4 pb-6 transition-all duration-500 lg:rounded-3xl"
         style={
@@ -291,7 +287,6 @@ export default function ProfilePage() {
         }
       >
         <div className="flex flex-col items-center gap-3 text-center">
-          
           <div className="animate-bounce-in relative">
             <Avatar size="lg" className="size-24! ring-4 ring-card shadow-lg">
               {(editing ? form.photoUrl : profile.photoUrl) && (
@@ -337,7 +332,6 @@ export default function ProfilePage() {
             )}
           </div>
 
-          
           {editing ? (
             <div className="flex w-full max-w-xs gap-2">
               <Input
@@ -368,7 +362,6 @@ export default function ProfilePage() {
             </div>
           )}
 
-          
           {!editing ? (
             <Button
               size="sm"
@@ -395,7 +388,6 @@ export default function ProfilePage() {
       </div>
 
       <div className="flex flex-col gap-5 px-4">
-        
         {editing && (
           <Card className="animate-slide-up">
             <div className="mb-3 flex items-center gap-2">
@@ -412,7 +404,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3">
               {isImageUrl(form.profileGradient) ? (
                 <div className="relative h-20 w-full overflow-hidden rounded-xl">
-                  
+                  {/* biome-ignore lint/performance/noImgElement: user-uploaded dynamic content */}
                   <img
                     src={form.profileGradient}
                     alt="Фон"
@@ -465,7 +457,6 @@ export default function ProfilePage() {
           </Card>
         )}
 
-        
         {editing ? (
           <Card className="animate-slide-up stagger-1">
             <FormTextarea
@@ -485,10 +476,8 @@ export default function ProfilePage() {
           )
         )}
 
-        
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
           <div className="flex flex-col gap-5">
-            
             {editing ? (
               <Card className="animate-slide-up stagger-2 flex flex-col gap-4">
                 <h3 className="text-sm font-semibold">Контакты</h3>
@@ -579,7 +568,6 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex flex-col gap-5">
-            
             <section className="animate-slide-up stagger-3">
               <h2 className="mb-3 text-base font-semibold tracking-tight">
                 Предстоящие мероприятия ({upcomingEvents.length})
@@ -610,7 +598,6 @@ export default function ProfilePage() {
               )}
             </section>
 
-            
             {pastEvents.length > 0 && (
               <section className="animate-slide-up stagger-4">
                 <h2 className="mb-3 text-base font-semibold tracking-tight">

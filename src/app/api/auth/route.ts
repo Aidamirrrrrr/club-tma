@@ -13,7 +13,6 @@ import {
 /** POST /api/auth — авторизация/регистрация через Telegram initData. */
 export async function POST(request: Request) {
   try {
-
     const contentLength = request.headers.get("content-length");
     if (contentLength && Number(contentLength) > 50_000) {
       return NextResponse.json({ error: "Request too large" }, { status: 413 });
@@ -51,7 +50,6 @@ export async function POST(request: Request) {
       }
       ({ id, first_name, last_name, username, photo_url } = parsed);
     } else {
-
       if (process.env.NODE_ENV !== "development" && process.env.BOT_TOKEN) {
         return NextResponse.json(
           { error: "initData required" },
@@ -83,7 +81,6 @@ export async function POST(request: Request) {
     });
 
     if (existing) {
-
       if (existing.blocked) {
         return NextResponse.json({ error: "User is blocked" }, { status: 403 });
       }

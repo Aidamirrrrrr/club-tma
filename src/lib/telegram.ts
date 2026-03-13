@@ -11,7 +11,6 @@ import { users } from "@/db/schema";
 export function validateInitData(initData: string): boolean {
   const botToken = process.env.BOT_TOKEN;
   if (!botToken) {
-
     if (process.env.NODE_ENV === "development") return true;
     console.error("BOT_TOKEN is not set");
     return false;
@@ -25,7 +24,7 @@ export function validateInitData(initData: string): boolean {
   if (authDate) {
     const authTimestamp = Number(authDate);
     const now = Math.floor(Date.now() / 1000);
-    const MAX_AGE_SECONDS = 86400; 
+    const MAX_AGE_SECONDS = 86400;
     if (now - authTimestamp > MAX_AGE_SECONDS) {
       return false;
     }
@@ -74,7 +73,6 @@ export function parseInitDataUser(initData: string): {
  * Проверяет заголовок `x-telegram-init-data` или `x-user-id` (dev).
  */
 export async function getAuthUser(request: Request): Promise<User | null> {
-
   const initData = request.headers.get("x-telegram-init-data");
   if (initData) {
     if (!validateInitData(initData)) return null;

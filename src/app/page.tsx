@@ -79,7 +79,6 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col gap-7 px-4 pb-6">
-
       <section className="animate-fade-in">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm lg:hidden">
@@ -175,7 +174,6 @@ export default function HomePage() {
         </Link>
       </section>
 
-      
       <section className="animate-slide-up stagger-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold tracking-tight">

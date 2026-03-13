@@ -12,8 +12,8 @@ export function MainContent({ children }: { children: ReactNode }) {
     window.scrollTo(0, 0);
   }, []);
 
-  const topPadding = safeAreaTop > 0 ? safeAreaTop + 56 : 24; 
-  const bottomPadding = safeAreaBottom > 0 ? safeAreaBottom + 80 : 96; 
+  const topPadding = safeAreaTop > 0 ? safeAreaTop + 56 : 24;
+  const bottomPadding = safeAreaBottom > 0 ? safeAreaBottom + 80 : 96;
 
   return (
     <main

@@ -157,7 +157,7 @@ export default function EventDetailPage() {
     if (!event) return;
     const text = `${event.title}\n${formatDate(event.date)}${event.time ? `, ${event.time}` : ""}\n${event.location || ""}`;
     if (navigator.share) {
-      navigator.share({ title: event.title, text });
+      navigator.share({ title: event.title, text }).catch(() => {});
     }
   };
 
@@ -195,7 +195,6 @@ export default function EventDetailPage() {
 
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
           <div className="flex flex-col gap-5">
-
             <Card className="animate-slide-up stagger-1 flex flex-col gap-3">
               <span className="flex items-center gap-3 text-sm">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -229,7 +228,6 @@ export default function EventDetailPage() {
               </span>
             </Card>
 
-            
             {event.description && (
               <Card className="animate-slide-up stagger-2">
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
@@ -238,7 +236,6 @@ export default function EventDetailPage() {
               </Card>
             )}
 
-            
             <div className="animate-slide-up stagger-3 flex gap-2">
               {event.status === "open" &&
                 event.date >= new Date().toISOString().slice(0, 10) &&
@@ -268,7 +265,6 @@ export default function EventDetailPage() {
               </Button>
             </div>
 
-            
             {isAdmin && (
               <div className="animate-slide-up stagger-4 flex gap-2">
                 <Link href={`/events/${event.id}/edit`} className="flex-1">
@@ -294,7 +290,6 @@ export default function EventDetailPage() {
             )}
           </div>
 
-          
           <section className="animate-slide-up stagger-5">
             <h2 className="mb-3 text-base font-semibold tracking-tight">
               Участники ({event.participantCount})

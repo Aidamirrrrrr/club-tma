@@ -220,7 +220,6 @@ export async function bootstrapTelegram() {
   }
 
   if (sdkReady) {
-
     try {
       if (miniApp.mount.isAvailable()) miniApp.mount();
       miniApp.ready();
@@ -231,16 +230,12 @@ export async function bootstrapTelegram() {
     try {
       if (mountViewport.isAvailable()) await withTimeout(mountViewport(), 2000);
       if (expandViewport.isAvailable()) expandViewport();
-    } catch {
-
-    }
+    } catch {}
 
     if (requestFullscreen.isAvailable()) {
       try {
         await withTimeout(requestFullscreen(), 2000);
-      } catch {
-
-      }
+      } catch {}
     }
 
     try {
@@ -260,9 +255,7 @@ export async function bootstrapTelegram() {
             language_code: u.language_code ?? undefined,
           };
         }
-      } catch {
-
-      }
+      } catch {}
 
       if (!user && initData) {
         user = parseUserFromInitData(initData);
