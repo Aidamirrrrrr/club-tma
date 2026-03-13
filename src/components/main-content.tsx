@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { useTelegram } from "@/components/telegram";
@@ -7,6 +8,7 @@ import { useTelegram } from "@/components/telegram";
 /** Обёртка основного контента с адаптивными отступами. */
 export function MainContent({ children }: { children: ReactNode }) {
   const { safeAreaTop, safeAreaBottom } = useTelegram();
+  const pathname = usePathname();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -23,13 +25,21 @@ export function MainContent({ children }: { children: ReactNode }) {
   const hasTopInset = safeAreaTop > 0;
   const hasBottomInset = safeAreaBottom > 0;
 
+  // Страницы с собственным фоновым блоком — без верхнего отступа
+  const noTopPadding =
+    pathname === "/profile" ||
+    pathname.startsWith("/members/") ||
+    /^\/events\/\d+/.test(pathname);
+
   return (
     <main
       className="mx-auto w-full max-w-lg overflow-x-clip lg:max-w-3xl lg:pb-8"
       style={{
-        paddingTop: hasTopInset
-          ? `calc(${cssSafeTop} + 32px)`
-          : `max(calc(${cssSafeTop} + 32px), 24px)`,
+        paddingTop: noTopPadding
+          ? undefined
+          : hasTopInset
+            ? `calc(${cssSafeTop} + 32px)`
+            : `max(calc(${cssSafeTop} + 32px), 24px)`,
         paddingBottom: hasBottomInset
           ? `calc(${cssSafeBottom} + 80px)`
           : `max(calc(${cssSafeBottom} + 80px), 96px)`,

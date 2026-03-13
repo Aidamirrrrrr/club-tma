@@ -170,7 +170,9 @@ export default function EventDetailPage() {
     );
 
   return (
-    <div className={`flex flex-col gap-5 pb-6${event.coverUrl ? "" : " px-4"}`}>
+    <div
+      className={`flex flex-col gap-5 pb-6${event.coverUrl ? "" : " px-4 pt-8"}`}
+    >
       {event.coverUrl && (
         <div className="animate-scale-in">
           <Image
