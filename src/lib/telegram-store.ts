@@ -232,6 +232,11 @@ export async function bootstrapTelegram() {
       if (expandViewport.isAvailable()) expandViewport();
     } catch {}
 
+    viewportSafeAreaInsetTop.sub(notify);
+    viewportSafeAreaInsetBottom.sub(notify);
+    viewportContentSafeAreaInsetTop.sub(notify);
+    viewportContentSafeAreaInsetBottom.sub(notify);
+
     if (requestFullscreen.isAvailable()) {
       try {
         await withTimeout(requestFullscreen(), 2000);
