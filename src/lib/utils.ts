@@ -3,11 +3,12 @@ import { format, parseISO } from "date-fns";
 import { ru } from "date-fns/locale";
 import { twMerge } from "tailwind-merge";
 
+/** Объединяет CSS-классы через clsx + tailwind-merge. */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Format ISO date string to Russian locale. */
+/** Форматирует ISO-дату в русскую локаль. */
 export function formatDate(dateStr: string, fmt = "d MMM yyyy"): string {
   try {
     return format(parseISO(dateStr), fmt, { locale: ru });
@@ -16,12 +17,12 @@ export function formatDate(dateStr: string, fmt = "d MMM yyyy"): string {
   }
 }
 
-/** Get initials from first & last name. */
+/** Возвращает инициалы из имени и фамилии. */
 export function getInitials(firstName: string, lastName?: string): string {
   return `${firstName?.[0] || ""}${lastName?.[0] || ""}`.toUpperCase();
 }
 
-/** Event status labels */
+/** Метки статусов мероприятий для отображения. */
 export const statusLabels: Record<string, string> = {
   open: "Открыта регистрация",
   closed: "Закрыта",
@@ -29,7 +30,7 @@ export const statusLabels: Record<string, string> = {
   completed: "Завершено",
 };
 
-/** Event status badge variants */
+/** Варианты стилей бейджа по статусу мероприятия. */
 export const statusVariants: Record<
   string,
   "success" | "warning" | "danger" | "default"
@@ -40,11 +41,11 @@ export const statusVariants: Record<
   completed: "default",
 };
 
-/** Default profile gradient */
+/** CSS-градиент профиля по умолчанию. */
 export const defaultGradient =
-  "linear-gradient(to bottom, oklch(0.881 0.18 130.6 / 0.12), transparent)";
+  "linear-gradient(to bottom, oklch(0.868 0.057 251.7 / 0.35), transparent)";
 
-/** Check if value looks like an image URL */
+/** Проверяет, является ли значение URL изображения. */
 export function isImageUrl(value: string | undefined): boolean {
   if (!value) return false;
   return value.startsWith("/") || value.startsWith("http");

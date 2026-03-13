@@ -5,13 +5,13 @@ import type { User } from "@/db/schema";
 import { users } from "@/db/schema";
 
 /**
- * Validate Telegram WebApp initData using HMAC-SHA256.
- * https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
+ * Валидирует initData Telegram Mini App через HMAC-SHA256.
+ * @see https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
  */
 export function validateInitData(initData: string): boolean {
   const botToken = process.env.BOT_TOKEN;
   if (!botToken) {
-    // In dev mode without BOT_TOKEN, skip validation
+
     if (process.env.NODE_ENV === "development") return true;
     console.error("BOT_TOKEN is not set");
     return false;
@@ -21,25 +21,22 @@ export function validateInitData(initData: string): boolean {
   const hash = params.get("hash");
   if (!hash) return false;
 
-  // Check auth_date expiration (max 24 hours)
   const authDate = params.get("auth_date");
   if (authDate) {
     const authTimestamp = Number(authDate);
     const now = Math.floor(Date.now() / 1000);
-    const MAX_AGE_SECONDS = 86400; // 24 hours
+    const MAX_AGE_SECONDS = 86400; 
     if (now - authTimestamp > MAX_AGE_SECONDS) {
       return false;
     }
   }
 
-  // Remove hash from params and sort alphabetically
   params.delete("hash");
   const dataCheckString = Array.from(params.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
 
-  // HMAC-SHA256 with "WebAppData" as key
   const secretKey = createHmac("sha256", "WebAppData")
     .update(botToken)
     .digest();
@@ -47,7 +44,6 @@ export function validateInitData(initData: string): boolean {
     .update(dataCheckString)
     .digest("hex");
 
-  // Timing-safe comparison to prevent timing attacks
   if (computedHash.length !== hash.length) return false;
   const a = Buffer.from(computedHash, "hex");
   const b = Buffer.from(hash, "hex");
@@ -55,9 +51,7 @@ export function validateInitData(initData: string): boolean {
   return timingSafeEqual(a, b);
 }
 
-/**
- * Parse user data from initData string.
- */
+/** Парсит данные пользователя из строки initData. */
 export function parseInitDataUser(initData: string): {
   id: number;
   first_name: string;
@@ -76,12 +70,11 @@ export function parseInitDataUser(initData: string): {
 }
 
 /**
- * Get the authenticated user from the request.
- * Checks the X-Telegram-Init-Data header for initData validation,
- * or X-User-Id header as fallback (set after auth).
+ * Возвращает авторизованного пользователя из запроса.
+ * Проверяет заголовок `x-telegram-init-data` или `x-user-id` (dev).
  */
 export async function getAuthUser(request: Request): Promise<User | null> {
-  // Try initData header first
+
   const initData = request.headers.get("x-telegram-init-data");
   if (initData) {
     if (!validateInitData(initData)) return null;
@@ -94,7 +87,6 @@ export async function getAuthUser(request: Request): Promise<User | null> {
     return user ?? null;
   }
 
-  // Fallback: userId header — only allowed in development (no BOT_TOKEN)
   if (process.env.NODE_ENV === "development" && !process.env.BOT_TOKEN) {
     const userId = request.headers.get("x-user-id");
     if (userId) {
@@ -108,9 +100,7 @@ export async function getAuthUser(request: Request): Promise<User | null> {
   return null;
 }
 
-/**
- * Require an authenticated, non-blocked user.
- */
+/** Требует авторизованного, незаблокированного пользователя. */
 export async function requireAuth(
   request: Request,
 ): Promise<{ user: User; error: null } | { user: null; error: Response }> {
@@ -130,9 +120,7 @@ export async function requireAuth(
   return { user, error: null };
 }
 
-/**
- * Require admin role.
- */
+/** Требует роль администратора. */
 export async function requireAdmin(
   request: Request,
 ): Promise<{ user: User; error: null } | { user: null; error: Response }> {

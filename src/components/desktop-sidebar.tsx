@@ -12,13 +12,14 @@ const navItems = [
   { href: "/profile", label: "Профиль", icon: UserCircle },
 ];
 
+/** Боковое меню для десктопа. */
 export function DesktopSidebar() {
   const pathname = usePathname();
 
   return (
     <aside className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:border-r lg:border-border bg-card">
       <div className="flex h-full flex-col gap-2 px-4 py-6">
-        {/* Logo */}
+
         <div className="mb-6 flex items-center gap-3 px-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-sm">
             <Image src="/logo.png" alt="Клуб" width={22} height={22} />
@@ -29,7 +30,6 @@ export function DesktopSidebar() {
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="flex flex-col gap-1">
           {navItems.map((item) => {
             const isActive =

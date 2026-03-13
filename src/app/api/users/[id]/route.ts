@@ -13,6 +13,7 @@ import {
   USER_ROLES,
 } from "@/lib/validation";
 
+/** GET /api/users/:id — профиль пользователя с историей мероприятий. */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -61,6 +62,7 @@ export async function GET(
   }
 }
 
+/** PATCH /api/users/:id — обновление профиля (свой) или управление (админ). */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -74,14 +76,12 @@ export async function PATCH(
 
     const body = await request.json();
 
-    // Admin-only fields
     const hasAdminFields = "role" in body || "blocked" in body;
 
     if (hasAdminFields) {
       const auth = await requireAdmin(request);
       if (auth.error) return auth.error;
 
-      // Prevent admin from demoting/blocking themselves
       if (auth.user.id === targetId) {
         return NextResponse.json(
           { error: "Cannot modify your own admin status" },
@@ -89,7 +89,7 @@ export async function PATCH(
         );
       }
     } else {
-      // Regular users can only edit their own profile
+
       const auth = await requireAuth(request);
       if (auth.error) return auth.error;
       if (auth.user.id !== targetId) {
@@ -97,7 +97,6 @@ export async function PATCH(
       }
     }
 
-    // Sanitize and validate each field individually
     const updates: Record<string, unknown> = {};
 
     if ("firstName" in body) {
@@ -124,7 +123,7 @@ export async function PATCH(
     }
     if ("profileGradient" in body) {
       const val = body.profileGradient;
-      // Allow "default" string or an image URL
+
       if (val === "default") {
         updates.profileGradient = "default";
       } else {
@@ -132,7 +131,6 @@ export async function PATCH(
       }
     }
 
-    // Admin-only fields (validated above)
     if ("role" in body && hasAdminFields) {
       if (!isOneOf(body.role, USER_ROLES)) {
         return NextResponse.json({ error: "Invalid role" }, { status: 400 });

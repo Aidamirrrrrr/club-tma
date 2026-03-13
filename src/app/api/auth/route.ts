@@ -10,9 +10,10 @@ import {
   sanitizeUrl,
 } from "@/lib/validation";
 
+/** POST /api/auth — авторизация/регистрация через Telegram initData. */
 export async function POST(request: Request) {
   try {
-    // Basic request size guard
+
     const contentLength = request.headers.get("content-length");
     if (contentLength && Number(contentLength) > 50_000) {
       return NextResponse.json({ error: "Request too large" }, { status: 413 });
@@ -50,8 +51,7 @@ export async function POST(request: Request) {
       }
       ({ id, first_name, last_name, username, photo_url } = parsed);
     } else {
-      // Fallback for dev/demo mode (no initData)
-      // Allow when BOT_TOKEN is not configured (local testing)
+
       if (process.env.NODE_ENV !== "development" && process.env.BOT_TOKEN) {
         return NextResponse.json(
           { error: "initData required" },
@@ -67,12 +67,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // Rate limit: 30 auth requests per minute per user
     if (isRateLimited(`auth:${id}`, 30, 60_000)) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    // Sanitize inputs
     const cleanFirstName = sanitizeText(first_name, 100) || "User";
     const cleanLastName = sanitizeText(last_name, 100) || "";
     const cleanUsername = sanitizeHandle(username, 64);
@@ -80,18 +78,16 @@ export async function POST(request: Request) {
 
     const telegramId = String(id);
 
-    // Check if user exists
     const existing = await db.query.users.findFirst({
       where: eq(users.telegramId, telegramId),
     });
 
     if (existing) {
-      // Check if blocked
+
       if (existing.blocked) {
         return NextResponse.json({ error: "User is blocked" }, { status: 403 });
       }
 
-      // Update basic info from Telegram
       const [updated] = await db
         .update(users)
         .set({
@@ -106,7 +102,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ user: updated });
     }
 
-    // Create new user
     const [newUser] = await db
       .insert(users)
       .values({

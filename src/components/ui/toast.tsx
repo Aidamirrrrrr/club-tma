@@ -29,6 +29,7 @@ const ToastContext = createContext<ToastContextType>({
   info: () => {},
 });
 
+/** Хук для показа уведомлений (toast). */
 export function useToast() {
   return useContext(ToastContext);
 }
@@ -63,7 +64,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast, success, error, info }}>
       {children}
-      {/* Toast container */}
+
       <div className="fixed top-4 left-1/2 z-100 flex -translate-x-1/2 flex-col gap-2">
         {toasts.map((t) => (
           <ToastItem key={t.id} toast={t} onRemove={remove} />

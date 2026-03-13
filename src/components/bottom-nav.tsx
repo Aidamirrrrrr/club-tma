@@ -3,7 +3,7 @@
 import { CalendarDays, Home, UserCircle, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTelegram } from "@/components/telegram-provider";
+import { useTelegram } from "@/components/telegram";
 
 const navItems = [
   { href: "/", label: "Главная", icon: Home },
@@ -12,6 +12,7 @@ const navItems = [
   { href: "/profile", label: "Профиль", icon: UserCircle },
 ];
 
+/** Нижняя навигация для мобильных устройств. */
 export function BottomNav() {
   const pathname = usePathname();
   const { safeAreaBottom } = useTelegram();

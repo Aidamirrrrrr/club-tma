@@ -3,7 +3,7 @@
 import { Search, Star, Users as UsersIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { useTelegram } from "@/components/telegram-provider";
+import { useTelegram } from "@/components/telegram";
 import { EmptyState, MemberCardSkeleton } from "@/components/ui/animated";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
@@ -14,13 +14,14 @@ import type { User } from "@/db/schema";
 import { useDebounce } from "@/lib/hooks";
 import { getInitials } from "@/lib/utils";
 
+/** Страница списка участников клуба. */
 export default function MembersPage() {
-  const { isLoading, authHeaders } = useTelegram();
+  const { isLoading, isAdmin, authHeaders } = useTelegram();
   const router = useRouter();
   const [members, setMembers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
-  const [filter, setFilter] = useState<"all" | "admins">("all");
+  const [filter, setFilter] = useState<"all" | "admins" | "blocked">("all");
   const [loadingData, setLoadingData] = useState(true);
 
   const load = useCallback(async () => {
@@ -29,6 +30,7 @@ export default function MembersPage() {
       const params = new URLSearchParams();
       if (debouncedSearch) params.set("search", debouncedSearch);
       if (filter === "admins") params.set("role", "admin");
+      if (filter === "blocked") params.set("blocked", "true");
       const res = await fetch(`/api/users?${params.toString()}`, {
         headers: authHeaders(),
       });
@@ -47,12 +49,12 @@ export default function MembersPage() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="flex w-full min-w-0 flex-col gap-5 px-4 pt-32 pb-6 lg:pt-8">
+    <div className="flex w-full min-w-0 flex-col gap-5 px-4 pb-6">
       <h1 className="animate-fade-in text-xl font-bold tracking-tight">
         Участники
       </h1>
 
-      {/* Search */}
+      
       <div className="animate-slide-up stagger-1 relative">
         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -64,15 +66,18 @@ export default function MembersPage() {
         />
       </div>
 
-      {/* Filter */}
+      
       <Tabs
         className="animate-slide-up stagger-2"
         value={filter}
-        onValueChange={(v) => setFilter(v as "all" | "admins")}
+        onValueChange={(v) => setFilter(v as "all" | "admins" | "blocked")}
       >
         <TabsList>
           <TabsTrigger value="all">Все</TabsTrigger>
           <TabsTrigger value="admins">Организаторы</TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="blocked">Заблокированные</TabsTrigger>
+          )}
         </TabsList>
       </Tabs>
 

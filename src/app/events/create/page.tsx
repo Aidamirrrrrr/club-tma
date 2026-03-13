@@ -2,9 +2,9 @@
 
 import { Camera, ImagePlus, Trash2 } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
-import { useTelegram } from "@/components/telegram-provider";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useRef, useState } from "react";
+import { useTelegram } from "@/components/telegram";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FormField, FormTextarea } from "@/components/ui/form-field";
@@ -12,22 +12,32 @@ import { PageLoader } from "@/components/ui/spinner";
 import { TimePicker } from "@/components/ui/time-picker";
 import { useToast } from "@/components/ui/toast";
 
+/** Страница создания мероприятия (обёртка с Suspense). */
 export default function CreateEventPage() {
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <CreateEventForm />
+    </Suspense>
+  );
+}
+
+function CreateEventForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { dbUser, isAdmin, isLoading, authHeaders } = useTelegram();
   const { success, error: showError } = useToast();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
+  const [form, setForm] = useState(() => ({
+    title: searchParams.get("title") || "",
+    description: searchParams.get("description") || "",
     date: "",
     time: "",
-    location: "",
-    coverUrl: "",
-    maxParticipants: "",
-  });
+    location: searchParams.get("location") || "",
+    coverUrl: searchParams.get("coverUrl") || "",
+    maxParticipants: searchParams.get("maxParticipants") || "",
+  }));
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -99,7 +109,7 @@ export default function CreateEventPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5 px-4 pt-32 pb-6 lg:mx-auto lg:max-w-lg lg:pt-8">
+    <div className="flex flex-col gap-5 px-4 pb-6 lg:mx-auto lg:max-w-lg">
       <h1 className="animate-slide-up text-xl font-bold tracking-tight">
         Создать мероприятие
       </h1>
@@ -147,7 +157,7 @@ export default function CreateEventPage() {
           onChange={handleChange}
           placeholder="Адрес или онлайн"
         />
-        {/* Cover upload */}
+        
         <div className="flex flex-col gap-1.5">
           <label htmlFor="cover-upload-create" className="text-sm font-medium">
             Обложка

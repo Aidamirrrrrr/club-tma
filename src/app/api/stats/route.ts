@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { events, registrations, users } from "@/db/schema";
 import { requireAuth } from "@/lib/telegram";
 
+/** GET /api/stats — общая статистика клуба. */
 export async function GET(request: Request) {
   try {
     const auth = await requireAuth(request);

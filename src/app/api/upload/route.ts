@@ -8,7 +8,7 @@ import {
   isRateLimited,
 } from "@/lib/validation";
 
-/** Map of detected MIME to canonical extension. */
+/** Маппинг MIME-типов на расширения файлов. */
 const MIME_TO_EXT: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/png": ".png",
@@ -16,12 +16,12 @@ const MIME_TO_EXT: Record<string, string> = {
   "image/gif": ".gif",
 };
 
+/** POST /api/upload — загрузка изображения (макс. 5 МБ). */
 export async function POST(request: Request) {
   try {
     const auth = await requireAuth(request);
     if (auth.error) return auth.error;
 
-    // Rate limit: 30 uploads per 10 minutes per user
     if (isRateLimited(`upload:${auth.user.id}`, 30, 600_000)) {
       return NextResponse.json({ error: "Too many uploads" }, { status: 429 });
     }
@@ -33,12 +33,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validate declared MIME type
     if (!(file.type in ALLOWED_IMAGE_TYPES)) {
       return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
     }
 
-    // Max 5MB
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json(
         { error: "File too large (max 5MB)" },
@@ -49,7 +47,6 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Verify actual file type via magic bytes (prevent MIME spoofing)
     const detectedType = detectImageType(buffer);
     if (!detectedType || !(detectedType in ALLOWED_IMAGE_TYPES)) {
       return NextResponse.json(
@@ -58,7 +55,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Use extension based on detected type (not user-supplied filename)
     const ext = MIME_TO_EXT[detectedType] || ".jpg";
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
 

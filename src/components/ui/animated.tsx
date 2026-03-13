@@ -3,7 +3,6 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-/* ── Page transition wrapper ── */
 export function PageWrapper({
   children,
   className,
@@ -14,7 +13,7 @@ export function PageWrapper({
   return <div className={cn("page-enter", className)}>{children}</div>;
 }
 
-/* ── Animated counter (numbers count up) ── */
+/** Анимированный счётчик (числа нарастают). */
 export function AnimatedCounter({
   value,
   duration = 600,
@@ -42,7 +41,7 @@ export function AnimatedCounter({
     function tick(now: number) {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease-out cubic
+
       const eased = 1 - (1 - progress) ** 3;
       setDisplay(Math.round(from + (to - from) * eased));
       if (progress < 1) {
@@ -60,7 +59,7 @@ export function AnimatedCounter({
   );
 }
 
-/* ── Staggered list (auto-staggers children) ── */
+/** Список с поочерёдной анимацией дочерних элементов. */
 export function StaggeredList({
   children,
   className,
@@ -89,7 +88,6 @@ export function StaggeredList({
   );
 }
 
-/* ── Skeleton components ── */
 export function Skeleton({
   className,
   ...props
@@ -114,6 +112,7 @@ export function CardSkeleton({ lines = 3 }: { lines?: number }) {
   );
 }
 
+/** Скелетон карточки статистики. */
 export function StatCardSkeleton() {
   return (
     <div className="rounded-2xl border bg-card p-4 shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]">
@@ -124,6 +123,7 @@ export function StatCardSkeleton() {
   );
 }
 
+/** Скелетон карточки участника. */
 export function MemberCardSkeleton() {
   return (
     <div className="flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]">
@@ -136,6 +136,7 @@ export function MemberCardSkeleton() {
   );
 }
 
+/** Скелетон карточки мероприятия. */
 export function EventCardSkeleton() {
   return (
     <div className="flex flex-col gap-2.5 rounded-2xl border bg-card p-4 shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]">
@@ -153,7 +154,7 @@ export function EventCardSkeleton() {
   );
 }
 
-/* ── Empty state with floating icon ── */
+/** Заглушка для пустого состояния с иконкой. */
 export function EmptyState({
   icon: Icon,
   message,

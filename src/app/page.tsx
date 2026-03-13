@@ -11,7 +11,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useTelegram } from "@/components/telegram-provider";
+import { useTelegram } from "@/components/telegram";
 import {
   AnimatedCounter,
   EmptyState,
@@ -43,6 +43,7 @@ interface Stats {
   totalRegistrations: number;
 }
 
+/** Главная страница: приветствие, статистика, ближайшие мероприятия. */
 export default function HomePage() {
   const { dbUser, isLoading, authHeaders } = useTelegram();
   const [events, setEvents] = useState<EventPreview[]>([]);
@@ -77,8 +78,8 @@ export default function HomePage() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="flex flex-col gap-7 px-4 pt-32 pb-6 lg:pt-8">
-      {/* Hero welcome */}
+    <div className="flex flex-col gap-7 px-4 pb-6">
+
       <section className="animate-fade-in">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm lg:hidden">
@@ -99,7 +100,6 @@ export default function HomePage() {
         </p>
       </section>
 
-      {/* Stats */}
       {loadingData ? (
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatCardSkeleton />
@@ -148,7 +148,6 @@ export default function HomePage() {
         </section>
       ) : null}
 
-      {/* Quick nav */}
       <section className="animate-slide-up stagger-5 grid grid-cols-2 gap-3">
         <Link href="/events" className="flex">
           <Card className="card-interactive flex w-full items-center gap-3 py-4">
@@ -176,7 +175,7 @@ export default function HomePage() {
         </Link>
       </section>
 
-      {/* Upcoming events */}
+      
       <section className="animate-slide-up stagger-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold tracking-tight">
@@ -211,7 +210,7 @@ export default function HomePage() {
                 className="flex"
               >
                 <Card
-                  className={`card-interactive animate-slide-up stagger-${Math.min(index + 6, 10)} flex w-full flex-col gap-2.5 overflow-hidden p-0`}
+                  className={`card-interactive animate-slide-up stagger-${Math.min(index + 6, 10)} flex h-full flex-col gap-2.5 overflow-hidden p-0`}
                 >
                   {event.coverUrl && (
                     <Image
@@ -222,7 +221,7 @@ export default function HomePage() {
                       className="h-48 w-full object-cover"
                     />
                   )}
-                  <div className="flex flex-col gap-2.5 px-4 pb-4 pt-2">
+                  <div className="flex flex-1 flex-col gap-2.5 px-4 pb-4 pt-2">
                     <div className="flex items-start justify-between gap-2">
                       <h3 className="font-semibold leading-tight tracking-tight">
                         {event.title}
@@ -234,7 +233,7 @@ export default function HomePage() {
                     <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                       {event.description}
                     </p>
-                    <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                    <div className="mt-auto flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
                       <span className="flex items-center gap-1.5">
                         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                           <CalendarDays className="h-3 w-3 text-primary-foreground" />

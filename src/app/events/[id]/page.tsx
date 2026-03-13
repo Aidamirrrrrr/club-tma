@@ -2,6 +2,7 @@
 
 import {
   CalendarDays,
+  Copy,
   Edit,
   MapPin,
   Share2,
@@ -15,7 +16,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { useTelegram } from "@/components/telegram-provider";
+import { useTelegram } from "@/components/telegram";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -169,9 +170,7 @@ export default function EventDetailPage() {
     );
 
   return (
-    <div
-      className={`flex flex-col gap-5 pb-6${event.coverUrl ? "" : " pt-32 px-4 lg:pt-8"}`}
-    >
+    <div className={`flex flex-col gap-5 pb-6${event.coverUrl ? "" : " px-4"}`}>
       {event.coverUrl && (
         <div className="animate-scale-in">
           <Image
@@ -194,10 +193,9 @@ export default function EventDetailPage() {
           </Badge>
         </div>
 
-        {/* Content: two-column on desktop */}
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
           <div className="flex flex-col gap-5">
-            {/* Info */}
+
             <Card className="animate-slide-up stagger-1 flex flex-col gap-3">
               <span className="flex items-center gap-3 text-sm">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -231,7 +229,7 @@ export default function EventDetailPage() {
               </span>
             </Card>
 
-            {/* Description */}
+            
             {event.description && (
               <Card className="animate-slide-up stagger-2">
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
@@ -240,9 +238,10 @@ export default function EventDetailPage() {
               </Card>
             )}
 
-            {/* Actions */}
+            
             <div className="animate-slide-up stagger-3 flex gap-2">
               {event.status === "open" &&
+                event.date >= new Date().toISOString().slice(0, 10) &&
                 dbUser &&
                 (isRegistered ? (
                   <Button
@@ -269,13 +268,20 @@ export default function EventDetailPage() {
               </Button>
             </div>
 
-            {/* Admin actions */}
+            
             {isAdmin && (
               <div className="animate-slide-up stagger-4 flex gap-2">
                 <Link href={`/events/${event.id}/edit`} className="flex-1">
                   <Button variant="secondary" className="w-full">
                     <Edit className="h-4 w-4" />
                     Редактировать
+                  </Button>
+                </Link>
+                <Link
+                  href={`/events/create?from=${event.id}&title=${encodeURIComponent(event.title)}&description=${encodeURIComponent(event.description)}&location=${encodeURIComponent(event.location)}&coverUrl=${encodeURIComponent(event.coverUrl || "")}&maxParticipants=${event.maxParticipants || ""}`}
+                >
+                  <Button variant="secondary">
+                    <Copy className="h-4 w-4" />
                   </Button>
                 </Link>
                 <Button
@@ -288,7 +294,7 @@ export default function EventDetailPage() {
             )}
           </div>
 
-          {/* Participants */}
+          
           <section className="animate-slide-up stagger-5">
             <h2 className="mb-3 text-base font-semibold tracking-tight">
               Участники ({event.participantCount})

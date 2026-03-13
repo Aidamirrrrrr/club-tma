@@ -1,3 +1,4 @@
+/** Компонент спиннера загрузки. */
 export function Spinner({ className = "" }: { className?: string }) {
   return (
     <div
@@ -9,6 +10,7 @@ export function Spinner({ className = "" }: { className?: string }) {
   );
 }
 
+/** Полностраничный индикатор загрузки. */
 export function PageLoader() {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 animate-fade-in">

@@ -13,6 +13,7 @@ interface ConfirmDialogProps {
   onCancel: () => void;
 }
 
+/** Модальный диалог подтверждения действия. */
 export function ConfirmDialog({
   open,
   title,
@@ -27,7 +28,7 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
+
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         role="button"
@@ -35,7 +36,7 @@ export function ConfirmDialog({
         onClick={onCancel}
         onKeyDown={(e) => e.key === "Escape" && onCancel()}
       />
-      {/* Dialog */}
+      
       <div className="animate-scale-in relative mx-4 w-full max-w-sm rounded-2xl bg-card p-5 shadow-xl">
         <h3 className="text-base font-semibold">{title}</h3>
         {description && (

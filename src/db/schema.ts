@@ -9,6 +9,7 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 
+/** Таблица пользователей. */
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   telegramId: text("telegram_id").notNull().unique(),
@@ -26,6 +27,7 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+/** Таблица мероприятий. */
 export const events = pgTable("events", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
@@ -43,6 +45,7 @@ export const events = pgTable("events", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+/** Таблица регистраций (связь пользователь — мероприятие). */
 export const registrations = pgTable(
   "registrations",
   {
@@ -58,7 +61,6 @@ export const registrations = pgTable(
   (t) => [unique().on(t.userId, t.eventId)],
 );
 
-// Relations
 export const usersRelations = relations(users, ({ many }) => ({
   registrations: many(registrations),
   createdEvents: many(events),

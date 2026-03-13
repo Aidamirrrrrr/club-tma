@@ -1,21 +1,17 @@
-/**
- * Input validation & sanitization utilities.
- * No external dependencies — pure string/number checks.
- */
-
-// ── String sanitization ──
-
-/** Strip HTML tags to prevent XSS via stored data. */
+/** Удаляет HTML-теги из строки для предотвращения XSS. */
 export function stripHtml(str: string): string {
   return str.replace(/<[^>]*>/g, "").trim();
 }
 
-/** Truncate string to max length. */
+/** Обрезает строку до указанной максимальной длины. */
 export function truncate(str: string, max: number): string {
   return str.length > max ? str.slice(0, max) : str;
 }
 
-/** Sanitize a text field: strip HTML, trim, truncate. */
+/**
+ * Очищает текстовое поле: удаляет HTML, пробелы, обрезает.
+ * @returns Очищенная строка или `undefined`.
+ */
 export function sanitizeText(
   value: unknown,
   maxLength: number,
@@ -25,7 +21,10 @@ export function sanitizeText(
   return truncate(stripHtml(value), maxLength);
 }
 
-/** Sanitize a required text field. Returns null if empty after sanitization. */
+/**
+ * Очищает обязательное текстовое поле.
+ * @returns Очищенная строка или `null`, если поле пустое.
+ */
 export function sanitizeRequiredText(
   value: unknown,
   maxLength: number,
@@ -35,9 +34,7 @@ export function sanitizeRequiredText(
   return clean;
 }
 
-// ── Specific field sanitizers ──
-
-/** Sanitize social handle (Instagram/Telegram): remove tags, allow @, alphanumeric, _, . */
+/** Очищает хэндл соцсети: допускает `@`, буквы, цифры, `_`, `.` */
 export function sanitizeHandle(value: unknown, maxLength = 64): string {
   if (typeof value !== "string") return "";
   let clean = stripHtml(value).replace(/[^a-zA-Z0-9@_.-]/g, "");
@@ -45,7 +42,7 @@ export function sanitizeHandle(value: unknown, maxLength = 64): string {
   return clean;
 }
 
-/** Sanitize phone number: allow digits, +, -, spaces, () */
+/** Очищает номер телефона: допускает цифры, `+`, `-`, пробелы, скобки. */
 export function sanitizePhone(value: unknown, maxLength = 30): string {
   if (typeof value !== "string") return "";
   let clean = stripHtml(value).replace(/[^0-9+\-() ]/g, "");
@@ -53,7 +50,7 @@ export function sanitizePhone(value: unknown, maxLength = 30): string {
   return clean;
 }
 
-/** Sanitize URL: must start with / or https:// */
+/** Очищает URL: допускает только `/uploads/...` и `https://...`. */
 export function sanitizeUrl(value: unknown, maxLength = 2048): string {
   if (typeof value !== "string") return "";
   const trimmed = value.trim();
@@ -64,9 +61,10 @@ export function sanitizeUrl(value: unknown, maxLength = 2048): string {
   return truncate(trimmed, maxLength);
 }
 
-// ── Number validation ──
-
-/** Parse and clamp integer within bounds. */
+/**
+ * Парсит число и ограничивает в пределах `[min, max]`.
+ * @returns Целое число в диапазоне или `fallback`.
+ */
 export function parseIntClamped(
   value: unknown,
   min: number,
@@ -80,24 +78,20 @@ export function parseIntClamped(
   return Math.max(min, Math.min(max, Math.floor(n)));
 }
 
-// ── Date validation ──
-
-/** Validate ISO date string (YYYY-MM-DD). */
+/** Проверяет формат ISO-даты (`YYYY-MM-DD`). */
 export function isValidDate(value: unknown): boolean {
   if (typeof value !== "string") return false;
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
 }
 
-/** Validate time string (HH:MM). */
+/** Проверяет формат времени (`HH:MM`). Пустая строка допустима. */
 export function isValidTime(value: unknown): boolean {
   if (typeof value !== "string") return false;
-  if (value === "") return true; // time is optional
+  if (value === "") return true;
   return /^\d{2}:\d{2}$/.test(value);
 }
 
-// ── Enum validation ──
-
-/** Check if value is one of the allowed values. */
+/** Проверяет, входит ли значение в допустимый список (type guard). */
 export function isOneOf<T extends string>(
   value: unknown,
   allowed: readonly T[],
@@ -107,8 +101,7 @@ export function isOneOf<T extends string>(
   );
 }
 
-// ── Event status ──
-
+/** Допустимые статусы мероприятия. */
 export const EVENT_STATUSES = [
   "open",
   "closed",
@@ -117,24 +110,16 @@ export const EVENT_STATUSES = [
 ] as const;
 export type EventStatus = (typeof EVENT_STATUSES)[number];
 
-// ── User role ──
-
+/** Допустимые роли пользователя. */
 export const USER_ROLES = ["user", "admin"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
-// ── Search sanitization (escape SQL LIKE special chars) ──
-
-/** Escape SQL LIKE wildcards in search input. */
+/** Экранирует спецсимволы SQL LIKE. */
 export function escapeLikePattern(input: string): string {
   return input.replace(/[%_\\]/g, "\\$&");
 }
 
-// ── File upload ──
-
-/**
- * Allowed extensions for image uploads.
- * Keys are MIME types, values are allowed file extensions.
- */
+/** Допустимые MIME-типы и расширения для загрузки изображений. */
 export const ALLOWED_IMAGE_TYPES: Record<string, string[]> = {
   "image/jpeg": [".jpg", ".jpeg"],
   "image/png": [".png"],
@@ -142,7 +127,7 @@ export const ALLOWED_IMAGE_TYPES: Record<string, string[]> = {
   "image/gif": [".gif"],
 };
 
-/** Validate file extension matches its MIME type. */
+/** Проверяет, что расширение файла соответствует MIME-типу. */
 export function isValidImageExtension(
   filename: string,
   mimeType: string,
@@ -156,15 +141,14 @@ export function isValidImageExtension(
   return allowed.includes(ext);
 }
 
-/** Check magic bytes to verify real file type. */
+/** Определяет тип изображения по magic bytes (JPEG, PNG, GIF, WebP). */
 export function detectImageType(buffer: Buffer): string | null {
   if (buffer.length < 4) return null;
 
-  // JPEG: FF D8 FF
   if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
     return "image/jpeg";
   }
-  // PNG: 89 50 4E 47
+
   if (
     buffer[0] === 0x89 &&
     buffer[1] === 0x50 &&
@@ -173,7 +157,7 @@ export function detectImageType(buffer: Buffer): string | null {
   ) {
     return "image/png";
   }
-  // GIF: 47 49 46 38
+
   if (
     buffer[0] === 0x47 &&
     buffer[1] === 0x49 &&
@@ -182,7 +166,7 @@ export function detectImageType(buffer: Buffer): string | null {
   ) {
     return "image/gif";
   }
-  // WebP: 52 49 46 46 ... 57 45 42 50
+
   if (
     buffer.length >= 12 &&
     buffer[0] === 0x52 &&
@@ -200,8 +184,6 @@ export function detectImageType(buffer: Buffer): string | null {
   return null;
 }
 
-// ── Rate limiting (in-memory, per-process) ──
-
 interface RateLimitEntry {
   count: number;
   resetAt: number;
@@ -209,7 +191,6 @@ interface RateLimitEntry {
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
-// Clean expired entries periodically (every 5 minutes)
 setInterval(
   () => {
     const now = Date.now();
@@ -223,11 +204,11 @@ setInterval(
 );
 
 /**
- * Simple in-memory rate limiter.
- * @param key Unique key (e.g. userId + action)
- * @param limit Max requests allowed
- * @param windowMs Time window in ms
- * @returns true if rate limit exceeded
+ * In-memory rate limiter (per-process).
+ * @param key Уникальный ключ (напр. `userId:action`).
+ * @param limit Максимум запросов за окно.
+ * @param windowMs Длительность окна в мс.
+ * @returns `true`, если лимит превышен.
  */
 export function isRateLimited(
   key: string,
@@ -249,9 +230,7 @@ export function isRateLimited(
   return false;
 }
 
-// ── Validate ID parameter ──
-
-/** Parse and validate a numeric ID from route params. Returns NaN if invalid. */
+/** Парсит числовой ID из строки. Возвращает `NaN` при невалидном значении. */
 export function parseId(value: string): number {
   const n = Number.parseInt(value, 10);
   if (!Number.isFinite(n) || n < 1) return Number.NaN;

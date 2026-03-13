@@ -4,8 +4,7 @@ import "./globals.css";
 import { BottomNav } from "@/components/bottom-nav";
 import { DesktopSidebar } from "@/components/desktop-sidebar";
 import { MainContent } from "@/components/main-content";
-import { TelegramBackButtonManager } from "@/components/telegram-back-button";
-import { TelegramProvider } from "@/components/telegram-provider";
+import { TelegramBackButtonManager, TelegramInit } from "@/components/telegram";
 import { ToastProvider } from "@/components/ui/toast";
 
 const helveticaNeue = localFont({
@@ -45,18 +44,17 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className={`${helveticaNeue.variable} antialiased`}>
-        <TelegramProvider>
-          <ToastProvider>
-            <TelegramBackButtonManager />
-            <div className="flex min-h-screen lg:h-screen lg:overflow-hidden">
-              <DesktopSidebar />
-              <div className="min-w-0 flex-1 overflow-x-hidden lg:overflow-y-auto">
-                <MainContent>{children}</MainContent>
-              </div>
+        <TelegramInit />
+        <ToastProvider>
+          <TelegramBackButtonManager />
+          <div className="flex min-h-screen lg:h-screen lg:overflow-hidden">
+            <DesktopSidebar />
+            <div className="min-w-0 flex-1 overflow-x-hidden lg:overflow-y-auto">
+              <MainContent>{children}</MainContent>
             </div>
-            <BottomNav />
-          </ToastProvider>
-        </TelegramProvider>
+          </div>
+          <BottomNav />
+        </ToastProvider>
       </body>
     </html>
   );

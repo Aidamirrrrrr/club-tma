@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-/** Debounce a value by `delay` ms. */
+/** Хук для дебаунса значения на указанное количество мс. */
 export function useDebounce<T>(value: T, delay = 300): T {
   const [debounced, setDebounced] = useState(value);
 

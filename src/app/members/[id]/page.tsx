@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { InstagramIcon, TelegramIcon } from "@/components/icons";
-import { useTelegram } from "@/components/telegram-provider";
+import { useTelegram } from "@/components/telegram";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -128,9 +128,9 @@ export default function MemberDetailPage() {
 
   return (
     <div className="flex flex-col gap-5 pb-6">
-      {/* Profile header */}
+      
       <div
-        className="animate-fade-in overflow-clip rounded-b-3xl px-4 pb-6 pt-32 transition-all duration-500 lg:rounded-3xl lg:pt-8"
+        className="animate-fade-in overflow-clip rounded-b-3xl px-4 pb-6 transition-all duration-500 lg:rounded-3xl"
         style={
           isImageUrl(member.profileGradient)
             ? {
@@ -193,10 +193,10 @@ export default function MemberDetailPage() {
       </div>
 
       <div className="flex flex-col gap-5 px-4">
-        {/* Contacts + Admin + Events: two-column on desktop */}
+
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
           <div className="flex flex-col gap-5">
-            {/* Contacts */}
+
             {(member.instagram || member.telegram || member.phone) && (
               <Card className="animate-slide-up stagger-2 flex flex-col gap-0 divide-y divide-border p-0">
                 {member.instagram && (
@@ -206,8 +206,8 @@ export default function MemberDetailPage() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                      <InstagramIcon className="h-4.5 w-4.5 text-primary" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E1306C]/15">
+                      <InstagramIcon className="h-4.5 w-4.5 text-[#E1306C]" />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground">Instagram</p>
@@ -222,8 +222,8 @@ export default function MemberDetailPage() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                      <TelegramIcon className="h-4.5 w-4.5 text-primary" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2AABEE]/15">
+                      <TelegramIcon className="h-4.5 w-4.5 text-[#2AABEE]" />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground">Telegram</p>
@@ -236,8 +236,8 @@ export default function MemberDetailPage() {
                     href={`tel:${member.phone}`}
                     className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                      <Phone className="h-4 w-4 text-primary" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#34C759]/15">
+                      <Phone className="h-4 w-4 text-[#34C759]" />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground">Телефон</p>
@@ -255,7 +255,7 @@ export default function MemberDetailPage() {
               </Card>
             )}
 
-            {/* Admin controls */}
+            
             {isAdmin && (
               <div className="animate-slide-up stagger-3 flex flex-col gap-2">
                 <Button
@@ -292,7 +292,7 @@ export default function MemberDetailPage() {
             )}
           </div>
 
-          {/* Event history */}
+          
           <section className="animate-slide-up stagger-4">
             <h2 className="mb-3 text-base font-semibold tracking-tight">
               История мероприятий ({member.events?.length || 0})

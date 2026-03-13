@@ -4,7 +4,7 @@ import { CalendarDays, MapPin, Plus, Search, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { useTelegram } from "@/components/telegram-provider";
+import { useTelegram } from "@/components/telegram";
 import { EmptyState, EventCardSkeleton } from "@/components/ui/animated";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ interface EventItem {
   participantCount: number;
 }
 
+/** Страница списка мероприятий с поиском и фильтрами. */
 export default function EventsPage() {
   const { isAdmin, isLoading, tgUser, authHeaders } = useTelegram();
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -63,7 +64,7 @@ export default function EventsPage() {
   if (isLoading) return <PageLoader />;
 
   return (
-    <div className="flex flex-col gap-5 px-4 pt-32 pb-6 lg:pt-8">
+    <div className="flex flex-col gap-5 px-4 pb-6">
       <div className="animate-fade-in flex items-center justify-between">
         <h1 className="text-xl font-bold tracking-tight">Мероприятия</h1>
         {isAdmin && (
@@ -76,7 +77,7 @@ export default function EventsPage() {
         )}
       </div>
 
-      {/* Search */}
+      
       <div className="animate-slide-up stagger-1 relative">
         <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
@@ -88,7 +89,7 @@ export default function EventsPage() {
         />
       </div>
 
-      {/* Filter tabs */}
+      
       <Tabs
         className="animate-slide-up stagger-2"
         value={filter}
@@ -101,7 +102,7 @@ export default function EventsPage() {
         </TabsList>
       </Tabs>
 
-      {/* Events list */}
+      
       {loadingData ? (
         <div className="flex flex-col gap-3">
           <EventCardSkeleton />
@@ -126,7 +127,7 @@ export default function EventsPage() {
           {events.map((event, index) => (
             <Link key={event.id} href={`/events/${event.id}`}>
               <Card
-                className={`card-interactive animate-slide-up stagger-${Math.min(index + 1, 10)} flex flex-col gap-2.5 overflow-hidden p-0`}
+                className={`card-interactive animate-slide-up stagger-${Math.min(index + 1, 10)} flex h-full flex-col gap-2.5 overflow-hidden p-0`}
               >
                 {event.coverUrl && (
                   <Image
@@ -137,7 +138,7 @@ export default function EventsPage() {
                     className="h-48 w-full object-cover"
                   />
                 )}
-                <div className="flex flex-col gap-2.5 px-4 pb-4 pt-2">
+                <div className="flex flex-1 flex-col gap-2.5 px-4 pb-4 pt-2">
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold leading-tight tracking-tight">
                       {event.title}
@@ -149,7 +150,7 @@ export default function EventsPage() {
                   <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                     {event.description}
                   </p>
-                  <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                  <div className="mt-auto flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
                     <span className="flex items-center gap-1.5">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                         <CalendarDays className="h-3 w-3 text-primary-foreground" />

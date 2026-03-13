@@ -4,7 +4,7 @@ import { Camera, ImagePlus, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useTelegram } from "@/components/telegram-provider";
+import { useTelegram } from "@/components/telegram";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FormField, FormTextarea } from "@/components/ui/form-field";
@@ -141,7 +141,7 @@ export default function EditEventPage() {
   }
 
   return (
-    <div className="flex flex-col gap-5 px-4 pt-32 pb-6 lg:mx-auto lg:max-w-lg lg:pt-8">
+    <div className="flex flex-col gap-5 px-4 pb-6 lg:mx-auto lg:max-w-lg">
       <h1 className="animate-slide-up text-xl font-bold tracking-tight">
         Редактировать мероприятие
       </h1>
@@ -189,7 +189,7 @@ export default function EditEventPage() {
           onChange={handleChange}
           placeholder="Адрес или онлайн"
         />
-        {/* Cover upload */}
+
         <div className="flex flex-col gap-1.5">
           <label htmlFor="cover-upload-edit" className="text-sm font-medium">
             Обложка

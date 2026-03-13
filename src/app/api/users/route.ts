@@ -2,9 +2,10 @@ import { and, eq, ilike, or } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { requireAuth } from "@/lib/telegram";
+import { requireAdmin, requireAuth } from "@/lib/telegram";
 import { escapeLikePattern } from "@/lib/validation";
 
+/** GET /api/users — список пользователей с поиском и фильтрацией. */
 export async function GET(request: Request) {
   try {
     const auth = await requireAuth(request);
@@ -31,8 +32,16 @@ export async function GET(request: Request) {
       conditions.push(eq(users.role, "admin"));
     }
 
-    // Always exclude blocked users from the list
-    conditions.push(eq(users.blocked, false));
+    const blocked = searchParams.get("blocked");
+    if (blocked === "true") {
+
+      const adminAuth = await requireAdmin(request);
+      if (adminAuth.error) return adminAuth.error;
+      conditions.push(eq(users.blocked, true));
+    } else {
+
+      conditions.push(eq(users.blocked, false));
+    }
 
     const where =
       conditions.length > 1

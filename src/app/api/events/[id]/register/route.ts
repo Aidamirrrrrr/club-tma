@@ -6,6 +6,7 @@ import { notifyRegistration } from "@/lib/notifications";
 import { requireAuth } from "@/lib/telegram";
 import { isRateLimited, parseId } from "@/lib/validation";
 
+/** POST /api/events/:id/register — регистрация на мероприятие. */
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -20,14 +21,12 @@ export async function POST(
       return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
     }
 
-    // Rate limit: 30 registration actions per minute per user
     if (isRateLimited(`register:${auth.user.id}`, 30, 60_000)) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     const userId = auth.user.id;
 
-    // Fetch event and check status
     const event = await db.query.events.findFirst({
       where: eq(events.id, eventId),
     });
@@ -43,7 +42,6 @@ export async function POST(
       );
     }
 
-    // Check max participants
     if (event.maxParticipants && event.maxParticipants > 0) {
       const [{ value: currentCount }] = await db
         .select({ value: count() })
@@ -58,7 +56,6 @@ export async function POST(
       }
     }
 
-    // Check if already registered
     const existing = await db.query.registrations.findFirst({
       where: and(
         eq(registrations.userId, userId),
@@ -78,7 +75,6 @@ export async function POST(
       .values({ userId, eventId })
       .returning();
 
-    // Send notification (fire-and-forget)
     notifyRegistration(auth.user, event).catch(console.error);
 
     return NextResponse.json(reg, { status: 201 });
@@ -91,6 +87,7 @@ export async function POST(
   }
 }
 
+/** DELETE /api/events/:id/register — отмена регистрации. */
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },

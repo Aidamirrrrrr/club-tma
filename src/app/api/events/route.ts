@@ -17,6 +17,7 @@ import {
   sanitizeUrl,
 } from "@/lib/validation";
 
+/** GET /api/events — список мероприятий с фильтрацией и поиском. */
 export async function GET(request: Request) {
   try {
     const auth = await requireAuth(request);
@@ -30,17 +31,25 @@ export async function GET(request: Request) {
 
     const conditions = [];
 
-    // Status-based filtering in SQL
+    const today = new Date().toISOString().slice(0, 10);
     if (filter === "upcoming") {
       conditions.push(
-        and(ne(events.status, "completed"), ne(events.status, "cancelled")),
+        and(
+          ne(events.status, "completed"),
+          ne(events.status, "cancelled"),
+          sql`${events.date} >= ${today}`,
+        ),
       );
     } else if (filter === "past") {
       conditions.push(
-        or(eq(events.status, "completed"), eq(events.status, "cancelled")),
+        or(
+          eq(events.status, "completed"),
+          eq(events.status, "cancelled"),
+          sql`${events.date} < ${today}`,
+        ),
       );
     } else if (filter === "mine" && telegramId) {
-      // Subquery: event IDs where user is registered
+
       const userEvents = db
         .select({ eventId: registrations.eventId })
         .from(registrations)
@@ -49,7 +58,6 @@ export async function GET(request: Request) {
       conditions.push(inArray(events.id, userEvents));
     }
 
-    // Search in SQL
     if (search) {
       conditions.push(
         or(
@@ -66,7 +74,6 @@ export async function GET(request: Request) {
           ? conditions[0]
           : undefined;
 
-    // Get events with participant count via subquery
     const participantCountSq = db
       .select({
         eventId: registrations.eventId,
@@ -106,19 +113,18 @@ export async function GET(request: Request) {
   }
 }
 
+/** POST /api/events — создание мероприятия (только админ). */
 export async function POST(request: Request) {
   try {
     const auth = await requireAdmin(request);
     if (auth.error) return auth.error;
 
-    // Rate limit: 20 event creations per hour per admin
     if (isRateLimited(`event-create:${auth.user.id}`, 20, 3600_000)) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
     const body = await request.json();
 
-    // Validate required fields
     const title = sanitizeRequiredText(body.title, 200);
     if (!title) {
       return NextResponse.json(
@@ -157,11 +163,10 @@ export async function POST(request: Request) {
         coverUrl: sanitizeUrl(body.coverUrl),
         maxParticipants: parseIntClamped(body.maxParticipants, 0, 10000, 0),
         status,
-        createdBy: auth.user.id, // Always use authenticated user's ID
+        createdBy: auth.user.id, 
       })
       .returning();
 
-    // Notify admins (fire-and-forget)
     notifyNewEvent(event).catch(console.error);
 
     return NextResponse.json(event, { status: 201 });

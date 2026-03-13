@@ -14,7 +14,7 @@ import {
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { InstagramIcon, TelegramIcon } from "@/components/icons";
-import { useTelegram } from "@/components/telegram-provider";
+import { useTelegram } from "@/components/telegram";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -30,7 +30,6 @@ import {
   isImageUrl,
 } from "@/lib/utils";
 
-/* ── Types ── */
 interface UserEvent {
   eventId: number;
   eventTitle: string;
@@ -53,6 +52,7 @@ interface ProfileData {
   events: UserEvent[];
 }
 
+/** Страница профиля текущего пользователя. */
 export default function ProfilePage() {
   const { dbUser, isLoading, refetchUser, authHeaders } = useTelegram();
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -118,27 +118,24 @@ export default function ProfilePage() {
     let masked = value;
 
     if (name === "instagram" || name === "telegram") {
-      // Strip everything except letters, digits, dots, underscores; ensure @ prefix
+
       masked = value.replace(/[^a-zA-Z0-9._]/g, "");
       if (masked && !masked.startsWith("@")) masked = `@${masked}`;
       if (masked === "@") masked = "";
     } else if (name === "phone") {
-      // Keep only digits and leading +, format with spaces
+
       const raw = value.replace(/[^\d+]/g, "");
       if (raw.startsWith("+") || raw.length > 0) {
         const plus = raw.startsWith("+");
         const digits = raw.replace(/\D/g, "");
         if (digits.length > 0) {
-          // Simple international format: +X XXX XXX XX XX (max 15 digits per E.164)
+
           let formatted = "+";
           const d = digits.slice(0, 15);
-          // Group: country(1-3) + rest in groups of 3-3-2-2
-          formatted += d.slice(0, Math.min(d.length, 1));
-          if (d.length > 1) formatted += ` ${d.slice(1, 4)}`;
-          if (d.length > 4) formatted += ` ${d.slice(4, 7)}`;
-          if (d.length > 7) formatted += ` ${d.slice(7, 9)}`;
-          if (d.length > 9) formatted += ` ${d.slice(9, 11)}`;
-          if (d.length > 11) formatted += ` ${d.slice(11, 15)}`;
+          for (let i = 0; i < d.length; i += 3) {
+            if (i > 0) formatted += " ";
+            formatted += d.slice(i, i + 3);
+          }
           masked = formatted;
         } else {
           masked = plus ? "+" : "";
@@ -280,9 +277,9 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-5 pb-6">
-      {/* Avatar & Name Header */}
+      
       <div
-        className="animate-fade-in overflow-clip rounded-b-3xl px-4 pb-6 pt-32 transition-all duration-500 lg:rounded-3xl lg:pt-8"
+        className="animate-fade-in overflow-clip rounded-b-3xl px-4 pb-6 transition-all duration-500 lg:rounded-3xl"
         style={
           hasBgImage
             ? {
@@ -294,7 +291,7 @@ export default function ProfilePage() {
         }
       >
         <div className="flex flex-col items-center gap-3 text-center">
-          {/* Avatar with edit overlay */}
+          
           <div className="animate-bounce-in relative">
             <Avatar size="lg" className="size-24! ring-4 ring-card shadow-lg">
               {(editing ? form.photoUrl : profile.photoUrl) && (
@@ -340,7 +337,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* Name */}
+          
           {editing ? (
             <div className="flex w-full max-w-xs gap-2">
               <Input
@@ -371,7 +368,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* Edit / Save / Cancel buttons — in the header */}
+          
           {!editing ? (
             <Button
               size="sm"
@@ -398,7 +395,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="flex flex-col gap-5 px-4">
-        {/* Background image picker — only in edit mode */}
+        
         {editing && (
           <Card className="animate-slide-up">
             <div className="mb-3 flex items-center gap-2">
@@ -415,7 +412,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-3">
               {isImageUrl(form.profileGradient) ? (
                 <div className="relative h-20 w-full overflow-hidden rounded-xl">
-                  {/* biome-ignore lint/performance/noImgElement: user-uploaded dynamic content */}
+                  
                   <img
                     src={form.profileGradient}
                     alt="Фон"
@@ -468,7 +465,7 @@ export default function ProfilePage() {
           </Card>
         )}
 
-        {/* Bio */}
+        
         {editing ? (
           <Card className="animate-slide-up stagger-1">
             <FormTextarea
@@ -488,10 +485,10 @@ export default function ProfilePage() {
           )
         )}
 
-        {/* Contacts + Events: two-column on desktop */}
+        
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
           <div className="flex flex-col gap-5">
-            {/* Contacts */}
+            
             {editing ? (
               <Card className="animate-slide-up stagger-2 flex flex-col gap-4">
                 <h3 className="text-sm font-semibold">Контакты</h3>
@@ -533,8 +530,8 @@ export default function ProfilePage() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                      <InstagramIcon className="h-4.5 w-4.5 text-primary" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#E1306C]/15">
+                      <InstagramIcon className="h-4.5 w-4.5 text-[#E1306C]" />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground">Instagram</p>
@@ -549,8 +546,8 @@ export default function ProfilePage() {
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                      <TelegramIcon className="h-4.5 w-4.5 text-primary" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2AABEE]/15">
+                      <TelegramIcon className="h-4.5 w-4.5 text-[#2AABEE]" />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground">Telegram</p>
@@ -563,8 +560,8 @@ export default function ProfilePage() {
                     href={`tel:${profile.phone}`}
                     className="flex items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
-                      <Phone className="h-4 w-4 text-primary" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#34C759]/15">
+                      <Phone className="h-4 w-4 text-[#34C759]" />
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-muted-foreground">Телефон</p>
@@ -582,7 +579,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex flex-col gap-5">
-            {/* Upcoming events */}
+            
             <section className="animate-slide-up stagger-3">
               <h2 className="mb-3 text-base font-semibold tracking-tight">
                 Предстоящие мероприятия ({upcomingEvents.length})
@@ -613,7 +610,7 @@ export default function ProfilePage() {
               )}
             </section>
 
-            {/* Past events */}
+            
             {pastEvents.length > 0 && (
               <section className="animate-slide-up stagger-4">
                 <h2 className="mb-3 text-base font-semibold tracking-tight">

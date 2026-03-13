@@ -16,6 +16,7 @@ import {
   sanitizeUrl,
 } from "@/lib/validation";
 
+/** GET /api/events/:id — детали мероприятия с участниками. */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -69,6 +70,7 @@ export async function GET(
   }
 }
 
+/** PATCH /api/events/:id — обновление мероприятия (только админ). */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -85,7 +87,6 @@ export async function PATCH(
 
     const body = await request.json();
 
-    // Validate and sanitize each field individually
     const updates: Record<string, unknown> = {};
 
     if ("title" in body) {
@@ -147,7 +148,6 @@ export async function PATCH(
       );
     }
 
-    // Fetch old event to detect status change
     const oldEvent = await db.query.events.findFirst({
       where: eq(events.id, eventId),
     });
@@ -162,7 +162,6 @@ export async function PATCH(
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    // Notify on status change
     if (oldEvent && "status" in updates && oldEvent.status !== updated.status) {
       notifyEventStatusChange(updated, updated.status).catch(console.error);
     }
@@ -177,6 +176,7 @@ export async function PATCH(
   }
 }
 
+/** DELETE /api/events/:id — удаление мероприятия (только админ). */
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> },

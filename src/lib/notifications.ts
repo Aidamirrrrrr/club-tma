@@ -5,6 +5,7 @@ import { registrations, users } from "@/db/schema";
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
+/** Отправляет сообщение через Telegram Bot API. */
 async function sendTelegramMessage(chatId: string, text: string) {
   if (!BOT_TOKEN) {
     console.log(`[notify skip] No BOT_TOKEN. chatId=${chatId} text=${text}`);
@@ -34,7 +35,7 @@ async function sendTelegramMessage(chatId: string, text: string) {
   }
 }
 
-/** Notify admins about a new event */
+/** Уведомляет администраторов о создании нового мероприятия. */
 export async function notifyNewEvent(event: Event) {
   const admins = await db.query.users.findMany({
     where: eq(users.role, "admin"),
@@ -56,7 +57,7 @@ export async function notifyNewEvent(event: Event) {
   );
 }
 
-/** Notify user about successful registration */
+/** Уведомляет пользователя об успешной регистрации на мероприятие. */
 export async function notifyRegistration(user: User, event: Event) {
   const msg =
     `✅ <b>Вы зарегистрированы!</b>\n\n` +
@@ -67,7 +68,7 @@ export async function notifyRegistration(user: User, event: Event) {
   await sendTelegramMessage(user.telegramId, msg);
 }
 
-/** Notify all registered users about event status change */
+/** Уведомляет зарегистрированных пользователей об изменении статуса мероприятия. */
 export async function notifyEventStatusChange(event: Event, newStatus: string) {
   const regs = await db.query.registrations.findMany({
     where: eq(registrations.eventId, event.id),
