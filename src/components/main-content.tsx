@@ -12,15 +12,27 @@ export function MainContent({ children }: { children: ReactNode }) {
     window.scrollTo(0, 0);
   }, []);
 
-  const topPadding = safeAreaTop > 0 ? safeAreaTop + 56 : 24;
-  const bottomPadding = safeAreaBottom > 0 ? safeAreaBottom + 80 : 96;
+  // CSS-переменные от SDK (bindViewportCssVars) обновляются реактивно.
+  // JS-значения используются как фоллбэк, а CSS calc — как основной источник.
+  const cssSafeTop =
+    "calc(var(--tg-viewport-safe-area-inset-top, 0px) + var(--tg-viewport-content-safe-area-inset-top, 0px))";
+  const cssSafeBottom =
+    "calc(var(--tg-viewport-safe-area-inset-bottom, 0px) + var(--tg-viewport-content-safe-area-inset-bottom, 0px))";
+
+  // Используем JS-значения для проверки наличия отступов
+  const hasTopInset = safeAreaTop > 0;
+  const hasBottomInset = safeAreaBottom > 0;
 
   return (
     <main
       className="mx-auto w-full max-w-lg overflow-x-clip lg:max-w-3xl lg:pb-8"
       style={{
-        paddingTop: topPadding > 0 ? `${topPadding}px` : undefined,
-        paddingBottom: `${bottomPadding}px`,
+        paddingTop: hasTopInset
+          ? `calc(${cssSafeTop} + 56px)`
+          : `max(calc(${cssSafeTop} + 56px), 24px)`,
+        paddingBottom: hasBottomInset
+          ? `calc(${cssSafeBottom} + 80px)`
+          : `max(calc(${cssSafeBottom} + 80px), 96px)`,
       }}
     >
       {children}

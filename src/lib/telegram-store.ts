@@ -2,12 +2,15 @@
 
 import {
   backButton,
+  bindViewportCssVars,
   expandViewport,
   init,
   initDataUser,
   miniApp,
   mountViewport,
+  requestContentSafeAreaInsets,
   requestFullscreen,
+  requestSafeAreaInsets,
   retrieveRawInitData,
   setDebug,
   viewportContentSafeAreaInsetBottom,
@@ -232,6 +235,10 @@ export async function bootstrapTelegram() {
       if (expandViewport.isAvailable()) expandViewport();
     } catch {}
 
+    try {
+      if (bindViewportCssVars.isAvailable()) bindViewportCssVars();
+    } catch {}
+
     viewportSafeAreaInsetTop.sub(notify);
     viewportSafeAreaInsetBottom.sub(notify);
     viewportContentSafeAreaInsetTop.sub(notify);
@@ -242,6 +249,12 @@ export async function bootstrapTelegram() {
         await withTimeout(requestFullscreen(), 2000);
       } catch {}
     }
+
+    try {
+      if (requestSafeAreaInsets.isAvailable()) requestSafeAreaInsets();
+      if (requestContentSafeAreaInsets.isAvailable())
+        requestContentSafeAreaInsets();
+    } catch {}
 
     try {
       const initData = retrieveRawInitData();
