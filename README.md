@@ -1,4 +1,4 @@
-# Club — Telegram Mini App
+# D1 Events — Telegram Mini App
 
 Веб-приложение для управления клубом: мероприятия, участники, профили. Работает как Telegram Mini App с авторизацией через `initData`.
 
@@ -10,29 +10,37 @@
 - **Telegram Mini App SDK** (`@telegram-apps/sdk-react`)
 - **Biome** — линтер и форматтер
 - **Docker** — multi-stage production build
+- **GitHub Actions** — CI/CD деплой по SSH
 
 ## Требования
 
 - Node.js 22+
 - pnpm
-- PostgreSQL
-- Telegram Bot Token (для уведомлений)
+- PostgreSQL (или Docker)
+- Telegram Bot Token
 
 ## Переменные окружения
 
-| Переменная     | Описание                        | Обязательна |
-| -------------- | ------------------------------- | :---------: |
-| `DATABASE_URL` | Строка подключения к PostgreSQL |      ✓      |
-| `BOT_TOKEN`    | Токен Telegram-бота             |             |
+| Переменная          | Описание                              | Обязательна |
+| ------------------- | ------------------------------------- | :---------: |
+| `POSTGRES_USER`     | Пользователь PostgreSQL               |             |
+| `POSTGRES_PASSWORD` | Пароль PostgreSQL                     |      ✓      |
+| `POSTGRES_DB`       | Имя базы данных                       |             |
+| `DATABASE_URL`      | Строка подключения (для локальной БД) |      ✓      |
+| `BOT_TOKEN`         | Токен Telegram-бота                   |      ✓      |
+| `PORT`              | Порт приложения (по умолчанию 3000)   |             |
 
-Создайте `.env` файл в корне проекта:
+Создайте `.env` файл в корне проекта (см. `.env.example`):
 
 ```env
-DATABASE_URL=postgresql://user:password@localhost:5432/club
+POSTGRES_USER=club
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_DB=club
+DATABASE_URL=postgresql://club:your_secure_password@localhost:5432/club
 BOT_TOKEN=123456789:ABCDefGHijKLmnopqrStuVwxyz
 ```
 
-## Запуск
+## Запуск (локально)
 
 ```bash
 # Установка зависимостей
@@ -136,6 +144,7 @@ src/
 | `POST`   | `/api/events`              | Создание мероприятия       | Админ    |
 | `GET`    | `/api/events/:id`          | Детали мероприятия         | Авториз. |
 | `PATCH`  | `/api/events/:id`          | Обновление мероприятия     | Админ    |
+| `DELETE` | `/api/events/:id`          | Удаление мероприятия       | Админ    |
 | `POST`   | `/api/events/:id/register` | Регистрация на мероприятие | Авториз. |
 | `DELETE` | `/api/events/:id/register` | Отмена регистрации         | Авториз. |
 
@@ -167,24 +176,62 @@ src/
 | `/members/:id`     | Профиль участника, история мероприятий      |
 | `/profile`         | Редактирование своего профиля               |
 
-## Docker
+## Деплой
+
+### Docker Compose (продакшен)
+
+На сервере поднимается PostgreSQL + приложение:
 
 ```bash
-# Сборка
-docker build -t club .
+# Создать .env и заполнить переменные
+cp .env.example .env
 
 # Запуск
-docker run -p 3000:3000 \
-  -e DATABASE_URL=postgresql://user:pass@host:5432/club \
-  -e BOT_TOKEN=your_bot_token \
-  club
+docker compose up -d
 ```
+
+### GitHub Actions (автодеплой)
+
+При пуше в `main` автоматически:
+
+1. Собирается Docker-образ → пушится в GitHub Container Registry
+2. По SSH копируется `docker-compose.yml` на сервер
+3. Выполняется `docker compose pull` + `up -d` + миграции
+
+#### Настройка секретов
+
+В GitHub → Settings → Secrets → Actions добавить:
+
+| Секрет     | Описание                     |
+| ---------- | ---------------------------- |
+| `SSH_KEY`  | Приватный SSH-ключ (ed25519) |
+| `SSH_HOST` | IP-адрес сервера             |
+| `SSH_USER` | Имя пользователя на сервере  |
+| `SSH_PORT` | Порт SSH (по умолчанию 22)   |
+
+#### Первоначальная настройка сервера
+
+```bash
+# Генерация SSH-ключа для GitHub Actions
+ssh-keygen -t ed25519 -f ~/.ssh/github_actions -N "" -C "github-actions-deploy"
+cat ~/.ssh/github_actions.pub >> ~/.ssh/authorized_keys
+
+# Приватный ключ — скопировать в секрет SSH_KEY
+cat ~/.ssh/github_actions
+
+# Создать директорию и .env
+mkdir -p ~/club && cd ~/club
+# Создать .env с переменными POSTGRES_PASSWORD, BOT_TOKEN и т.д.
+```
+
+Или использовать готовый скрипт `deploy.sh` для автоматической настройки.
 
 ## Безопасность
 
-- HMAC-SHA256 валидация Telegram `initData`
+- HMAC-SHA256 валидация Telegram `initData` с проверкой `auth_date`
 - Санитизация всех входных данных (XSS, SQL injection)
 - Magic bytes валидация загружаемых файлов
-- Rate limiting на критичных эндпоинтах
+- Rate limiting на всех эндпоинтах
 - Транзакции для атомарных операций (регистрация)
 - Ролевая модель доступа (user / admin)
+- Security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy)

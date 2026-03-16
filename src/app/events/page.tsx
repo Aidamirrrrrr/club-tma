@@ -3,7 +3,7 @@
 import { CalendarDays, MapPin, Plus, Search, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTelegram } from "@/components/telegram";
 import { EmptyState, EventCardSkeleton } from "@/components/ui/animated";
 import { Badge } from "@/components/ui/badge";
@@ -39,27 +39,26 @@ export default function EventsPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
 
-  const load = useCallback(async () => {
-    setLoadingData(true);
-    try {
-      const params = new URLSearchParams({ filter, search: debouncedSearch });
-      if (filter === "mine" && tgUser?.id) {
-        params.set("telegramId", String(tgUser.id));
-      }
-      const res = await fetch(`/api/events?${params.toString()}`, {
-        headers: authHeaders(),
-      });
-      if (res.ok) setEvents(await res.json());
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingData(false);
-    }
-  }, [filter, debouncedSearch, tgUser, authHeaders]);
-
   useEffect(() => {
-    if (!isLoading) load();
-  }, [load, isLoading]);
+    if (isLoading) return;
+    const controller = new AbortController();
+    setLoadingData(true);
+    const params = new URLSearchParams({ filter, search: debouncedSearch });
+    if (filter === "mine" && tgUser?.id) {
+      params.set("telegramId", String(tgUser.id));
+    }
+    fetch(`/api/events?${params.toString()}`, {
+      headers: authHeaders(),
+      signal: controller.signal,
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then(setEvents)
+      .catch((e) => {
+        if (e.name !== "AbortError") console.error(e);
+      })
+      .finally(() => setLoadingData(false));
+    return () => controller.abort();
+  }, [filter, debouncedSearch, tgUser, isLoading, authHeaders]);
 
   if (isLoading) return <PageLoader />;
 

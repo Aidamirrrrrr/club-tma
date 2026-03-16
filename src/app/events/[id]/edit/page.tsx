@@ -106,7 +106,15 @@ export default function EditEventPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.date) return;
+    if (saving) return;
+    if (!form.title.trim()) {
+      showError("Введите название мероприятия");
+      return;
+    }
+    if (!form.date) {
+      showError("Выберите дату");
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch(`/api/events/${id}`, {
@@ -134,11 +142,11 @@ export default function EditEventPage() {
     }
   };
 
-  if (isLoading || loading) return <PageLoader />;
-  if (!isAdmin) {
-    router.push("/events");
-    return null;
-  }
+  useEffect(() => {
+    if (!isLoading && !isAdmin) router.push("/events");
+  }, [isLoading, isAdmin, router]);
+
+  if (isLoading || loading || !isAdmin) return <PageLoader />;
 
   return (
     <div className="flex flex-col gap-5 px-4 pb-6 lg:mx-auto lg:max-w-lg">

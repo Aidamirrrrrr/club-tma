@@ -3,7 +3,7 @@
 import { Camera, ImagePlus, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useTelegram } from "@/components/telegram";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -29,15 +29,44 @@ function CreateEventForm() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState(() => ({
-    title: searchParams.get("title") || "",
-    description: searchParams.get("description") || "",
+  const fromId = searchParams.get("from");
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
     date: "",
     time: "",
-    location: searchParams.get("location") || "",
-    coverUrl: searchParams.get("coverUrl") || "",
-    maxParticipants: searchParams.get("maxParticipants") || "",
-  }));
+    location: "",
+    coverUrl: "",
+    maxParticipants: "",
+  });
+
+  useEffect(() => {
+    if (!fromId || isLoading) return;
+    async function loadSource() {
+      try {
+        const res = await fetch(`/api/events/${fromId}`, {
+          headers: authHeaders(),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setForm({
+            title: data.title || "",
+            description: data.description || "",
+            date: "",
+            time: "",
+            location: data.location || "",
+            coverUrl: data.coverUrl || "",
+            maxParticipants: data.maxParticipants
+              ? String(data.maxParticipants)
+              : "",
+          });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    loadSource();
+  }, [fromId, isLoading, authHeaders]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -73,7 +102,16 @@ function CreateEventForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.title || !form.date || !dbUser) return;
+    if (saving) return;
+    if (!form.title.trim()) {
+      showError("Введите название мероприятия");
+      return;
+    }
+    if (!form.date) {
+      showError("Выберите дату");
+      return;
+    }
+    if (!dbUser) return;
     setSaving(true);
     try {
       const res = await fetch("/api/events", {
@@ -102,11 +140,11 @@ function CreateEventForm() {
     }
   };
 
-  if (isLoading) return <PageLoader />;
-  if (!isAdmin) {
-    router.push("/events");
-    return null;
-  }
+  useEffect(() => {
+    if (!isLoading && !isAdmin) router.push("/events");
+  }, [isLoading, isAdmin, router]);
+
+  if (isLoading || !isAdmin) return <PageLoader />;
 
   return (
     <div className="flex flex-col gap-5 px-4 pb-6 lg:mx-auto lg:max-w-lg">

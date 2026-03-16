@@ -1,0 +1,101 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/metadata-action@v5
+        id: meta
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy config files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: "docker-compose.yml,nginx.conf,init-letsencrypt.sh"
+          target: ~/club
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            cd ~/club
+
+            # Login to GHCR
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # Set image tag
+            export IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+            # Substitute domain in nginx.conf
+            DOMAIN="${{ secrets.DOMAIN }}"
+            EMAIL="${{ secrets.EMAIL }}"
+            if [ -n "$DOMAIN" ]; then
+              sed -i "s/DOMAIN/$DOMAIN/g" nginx.conf
+              sed -i "s/server_name _;/server_name $DOMAIN;/g" nginx.conf
+            fi
+
+            # Pull new image and restart
+            docker compose pull app
+            docker compose up -d
+
+            # Init SSL if certificate doesn't exist yet
+            if [ -n "$DOMAIN" ] && [ -n "$EMAIL" ]; then
+              if ! docker compose exec -T nginx test -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem 2>/dev/null; then
+                chmod +x init-letsencrypt.sh
+                bash init-letsencrypt.sh "$DOMAIN" "$EMAIL"
+              fi
+            fi
+
+            # Run migrations
+            docker compose exec -T app \
+              node -e "require('child_process').execSync('npx drizzle-kit push', { stdio: 'inherit' })"
+
+            # Cleanup old images
+            docker image prune -f

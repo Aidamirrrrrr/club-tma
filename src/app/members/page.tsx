@@ -2,7 +2,7 @@
 
 import { Search, Star, Users as UsersIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTelegram } from "@/components/telegram";
 import { EmptyState, MemberCardSkeleton } from "@/components/ui/animated";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -24,27 +24,26 @@ export default function MembersPage() {
   const [filter, setFilter] = useState<"all" | "admins" | "blocked">("all");
   const [loadingData, setLoadingData] = useState(true);
 
-  const load = useCallback(async () => {
-    setLoadingData(true);
-    try {
-      const params = new URLSearchParams();
-      if (debouncedSearch) params.set("search", debouncedSearch);
-      if (filter === "admins") params.set("role", "admin");
-      if (filter === "blocked") params.set("blocked", "true");
-      const res = await fetch(`/api/users?${params.toString()}`, {
-        headers: authHeaders(),
-      });
-      if (res.ok) setMembers(await res.json());
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingData(false);
-    }
-  }, [debouncedSearch, filter, authHeaders]);
-
   useEffect(() => {
-    if (!isLoading) load();
-  }, [load, isLoading]);
+    if (isLoading) return;
+    const controller = new AbortController();
+    setLoadingData(true);
+    const params = new URLSearchParams();
+    if (debouncedSearch) params.set("search", debouncedSearch);
+    if (filter === "admins") params.set("role", "admin");
+    if (filter === "blocked") params.set("blocked", "true");
+    fetch(`/api/users?${params.toString()}`, {
+      headers: authHeaders(),
+      signal: controller.signal,
+    })
+      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
+      .then(setMembers)
+      .catch((e) => {
+        if (e.name !== "AbortError") console.error(e);
+      })
+      .finally(() => setLoadingData(false));
+    return () => controller.abort();
+  }, [debouncedSearch, filter, isLoading, authHeaders]);
 
   if (isLoading) return <PageLoader />;
 

@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageLoader } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import {
@@ -57,6 +58,9 @@ export default function MemberDetailPage() {
   const { isAdmin, isLoading: authLoading, authHeaders } = useTelegram();
   const [member, setMember] = useState<MemberDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showRoleConfirm, setShowRoleConfirm] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
   const toast = useToast();
 
   const loadMember = useCallback(async () => {
@@ -75,8 +79,9 @@ export default function MemberDetailPage() {
   }, [loadMember, authLoading]);
 
   const toggleRole = async () => {
-    if (!member) return;
+    if (!member || actionLoading) return;
     const newRole = member.role === "admin" ? "user" : "admin";
+    setActionLoading(true);
     try {
       const res = await fetch(`/api/users/${member.id}`, {
         method: "PATCH",
@@ -89,15 +94,21 @@ export default function MemberDetailPage() {
             ? "Назначен организатором"
             : "Роль организатора снята",
         );
-        loadMember();
+        await loadMember();
+      } else {
+        toast.error("Не удалось изменить роль");
       }
     } catch {
       toast.error("Не удалось изменить роль");
+    } finally {
+      setActionLoading(false);
+      setShowRoleConfirm(false);
     }
   };
 
   const toggleBlock = async () => {
-    if (!member) return;
+    if (!member || actionLoading) return;
+    setActionLoading(true);
     try {
       const res = await fetch(`/api/users/${member.id}`, {
         method: "PATCH",
@@ -110,10 +121,15 @@ export default function MemberDetailPage() {
             ? "Пользователь разблокирован"
             : "Пользователь заблокирован",
         );
-        loadMember();
+        await loadMember();
+      } else {
+        toast.error("Не удалось выполнить действие");
       }
     } catch {
       toast.error("Не удалось выполнить действие");
+    } finally {
+      setActionLoading(false);
+      setShowBlockConfirm(false);
     }
   };
 
@@ -262,7 +278,8 @@ export default function MemberDetailPage() {
                 <Button
                   variant="secondary"
                   className="w-full"
-                  onClick={toggleRole}
+                  onClick={() => setShowRoleConfirm(true)}
+                  disabled={actionLoading}
                 >
                   {member.role === "admin" ? (
                     <>
@@ -277,7 +294,8 @@ export default function MemberDetailPage() {
                 <Button
                   variant={member.blocked ? "default" : "destructive"}
                   className="w-full"
-                  onClick={toggleBlock}
+                  onClick={() => setShowBlockConfirm(true)}
+                  disabled={actionLoading}
                 >
                   {member.blocked ? (
                     <>
@@ -289,6 +307,37 @@ export default function MemberDetailPage() {
                     </>
                   )}
                 </Button>
+                <ConfirmDialog
+                  open={showRoleConfirm}
+                  title={
+                    member.role === "admin"
+                      ? "Снять организатора"
+                      : "Назначить организатором"
+                  }
+                  description={
+                    member.role === "admin"
+                      ? `Снять роль организатора у ${member.firstName}?`
+                      : `Назначить ${member.firstName} организатором?`
+                  }
+                  confirmLabel="Подтвердить"
+                  onConfirm={toggleRole}
+                  onCancel={() => setShowRoleConfirm(false)}
+                />
+                <ConfirmDialog
+                  open={showBlockConfirm}
+                  title={member.blocked ? "Разблокировать" : "Заблокировать"}
+                  description={
+                    member.blocked
+                      ? `Разблокировать ${member.firstName}?`
+                      : `Заблокировать ${member.firstName}? Пользователь потеряет доступ.`
+                  }
+                  confirmLabel={
+                    member.blocked ? "Разблокировать" : "Заблокировать"
+                  }
+                  variant={member.blocked ? "default" : "destructive"}
+                  onConfirm={toggleBlock}
+                  onCancel={() => setShowBlockConfirm(false)}
+                />
               </div>
             )}
           </div>

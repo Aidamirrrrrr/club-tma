@@ -51,7 +51,11 @@ export default function HomePage() {
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
-    if (isLoading || !dbUser) return;
+    if (isLoading) return;
+    if (!dbUser) {
+      setLoadingData(false);
+      return;
+    }
     async function load() {
       try {
         const headers = authHeaders();

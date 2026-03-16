@@ -83,7 +83,12 @@ export default function EventDetailPage() {
   }, [id, authHeaders]);
 
   useEffect(() => {
-    if (!authLoading && dbUser) loadEvent();
+    if (authLoading) return;
+    if (!dbUser) {
+      setLoading(false);
+      return;
+    }
+    loadEvent();
   }, [loadEvent, authLoading, dbUser]);
 
   const handleRegister = async () => {
@@ -133,7 +138,8 @@ export default function EventDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!event) return;
+    if (!event || actionLoading) return;
+    setActionLoading(true);
     try {
       const res = await fetch(`/api/events/${event.id}`, {
         method: "DELETE",
@@ -150,6 +156,7 @@ export default function EventDetailPage() {
       toast("Ошибка сети", "error");
     } finally {
       setShowDeleteConfirm(false);
+      setActionLoading(false);
     }
   };
 
@@ -275,9 +282,7 @@ export default function EventDetailPage() {
                     Редактировать
                   </Button>
                 </Link>
-                <Link
-                  href={`/events/create?from=${event.id}&title=${encodeURIComponent(event.title)}&description=${encodeURIComponent(event.description)}&location=${encodeURIComponent(event.location)}&coverUrl=${encodeURIComponent(event.coverUrl || "")}&maxParticipants=${event.maxParticipants || ""}`}
-                >
+                <Link href={`/events/create?from=${event.id}`}>
                   <Button variant="secondary">
                     <Copy className="h-4 w-4" />
                   </Button>

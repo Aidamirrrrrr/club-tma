@@ -191,9 +191,13 @@ export default function ProfilePage() {
         toast.success("Профиль сохранён");
         await loadProfile();
         await refetchUser();
+      } else {
+        const data = await res.json().catch(() => null);
+        toast.error(data?.error || "Не удалось сохранить профиль");
       }
     } catch (e) {
       console.error(e);
+      toast.error("Ошибка сети");
     } finally {
       setSaving(false);
     }
@@ -214,9 +218,12 @@ export default function ProfilePage() {
       if (res.ok) {
         const { url } = await res.json();
         setForm((prev) => ({ ...prev, photoUrl: url }));
+      } else {
+        toast.error("Не удалось загрузить фото");
       }
     } catch (e) {
       console.error(e);
+      toast.error("Ошибка загрузки файла");
     } finally {
       setUploading(false);
     }
@@ -237,9 +244,12 @@ export default function ProfilePage() {
       if (res.ok) {
         const { url } = await res.json();
         setForm((prev) => ({ ...prev, profileGradient: url }));
+      } else {
+        toast.error("Не удалось загрузить фон");
       }
     } catch (e) {
       console.error(e);
+      toast.error("Ошибка загрузки файла");
     } finally {
       setUploadingBg(false);
     }

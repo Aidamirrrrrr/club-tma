@@ -48,5 +48,5 @@ export const defaultGradient =
 /** Проверяет, является ли значение URL изображения. */
 export function isImageUrl(value: string | undefined): boolean {
   if (!value) return false;
-  return value.startsWith("/") || value.startsWith("http");
+  return value.startsWith("/uploads/") || value.startsWith("https://");
 }
