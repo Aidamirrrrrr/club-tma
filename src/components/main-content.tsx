@@ -12,7 +12,7 @@ export function MainContent({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, []);
+  }, [pathname]);
 
   // CSS-переменные от SDK (bindViewportCssVars) обновляются реактивно.
   // JS-значения используются как фоллбэк, а CSS calc — как основной источник.
