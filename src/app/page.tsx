@@ -3,7 +3,10 @@
 import {
   CalendarDays,
   ChevronRight,
+  Gift,
   MapPin,
+  MessageSquarePlus,
+  MessagesSquare,
   TrendingUp,
   UserCheck,
   Users,
@@ -83,7 +86,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col gap-7 px-4 pb-6">
-      <section className="animate-fade-in">
+      <section className="animate-fade-in rounded-2xl bg-muted/50 p-5">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm lg:hidden">
             <Image src="/logo.png" alt="Клуб" width={26} height={26} />
@@ -153,26 +156,119 @@ export default function HomePage() {
 
       <section className="animate-slide-up stagger-5 grid grid-cols-2 gap-3">
         <Link href="/events" className="flex">
-          <Card className="card-interactive flex w-full items-center gap-3 py-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-              <CalendarDays className="h-5 w-5 text-primary-foreground" />
+          <Card className="card-interactive flex w-full flex-col overflow-hidden p-0">
+            <div className="relative h-32 bg-primary/5">
+              <Image
+                src="/tower.png"
+                alt="Мероприятия"
+                fill
+                className="object-cover"
+              />
             </div>
-            <div>
-              <p className="text-sm font-semibold">Мероприятия</p>
-              <p className="text-[10px] text-muted-foreground">
-                Все мероприятия
-              </p>
+            <div className="flex items-center gap-2.5 p-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
+                <CalendarDays className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold leading-tight">
+                  Мероприятия
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  Все мероприятия
+                </p>
+              </div>
+            </div>
+          </Card>
+        </Link>
+        <Link href="/community-request" className="flex">
+          <Card className="card-interactive flex w-full flex-col overflow-hidden p-0">
+            <div className="relative h-32 bg-primary/5">
+              <Image
+                src="/decor-1.png"
+                alt="Запрос в сообщество"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="flex items-center gap-2.5 p-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
+                <MessageSquarePlus className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold leading-tight">Запрос</p>
+                <p className="text-[10px] text-muted-foreground">
+                  В сообщество
+                </p>
+              </div>
             </div>
           </Card>
         </Link>
         <Link href="/members" className="flex">
-          <Card className="card-interactive flex w-full items-center gap-3 py-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-              <Users className="h-5 w-5 text-primary-foreground" />
+          <Card className="card-interactive flex w-full flex-col overflow-hidden p-0">
+            <div className="relative h-32 bg-primary/5">
+              <Image
+                src="/decor-2.png"
+                alt="Участники"
+                fill
+                className="object-cover"
+              />
             </div>
-            <div>
-              <p className="text-sm font-semibold">Участники</p>
-              <p className="text-[10px] text-muted-foreground">Все люди</p>
+            <div className="flex items-center gap-2.5 p-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
+                <Users className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold leading-tight">Участники</p>
+                <p className="text-[10px] text-muted-foreground">Все люди</p>
+              </div>
+            </div>
+          </Card>
+        </Link>
+        <Link href="/chats" className="flex">
+          <Card className="card-interactive flex w-full flex-col overflow-hidden p-0">
+            <div className="relative h-32 bg-primary/5">
+              <Image
+                src="/decor-3.png"
+                alt="Чаты и каналы"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="flex items-center gap-2.5 p-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
+                <MessagesSquare className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold leading-tight">
+                  Чаты и каналы
+                </p>
+                <p className="text-[10px] text-muted-foreground">Ссылки</p>
+              </div>
+            </div>
+          </Card>
+        </Link>
+        <Link href="/loyalty" className="col-span-2 flex">
+          <Card className="card-interactive flex w-full items-center overflow-hidden p-0">
+            <div className="relative h-24 w-24 shrink-0 bg-primary/5">
+              <Image
+                src="/decor-4.png"
+                alt="Программа лояльности"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div className="flex items-center gap-2.5 p-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary">
+                <Gift className="h-4 w-4 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold leading-tight">
+                  Программа лояльности
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  Бонусы и привилегии
+                </p>
+              </div>
             </div>
           </Card>
         </Link>

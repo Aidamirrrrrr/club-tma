@@ -64,6 +64,7 @@ export const registrations = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
   registrations: many(registrations),
   createdEvents: many(events),
+  communityRequests: many(communityRequests),
 }));
 
 export const eventsRelations = relations(events, ({ one, many }) => ({
@@ -85,9 +86,47 @@ export const registrationsRelations = relations(registrations, ({ one }) => ({
   }),
 }));
 
+/** Таблица запросов в сообщество. */
+export const communityRequests = pgTable("community_requests", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  message: text("message").notNull(),
+  status: text("status")
+    .$type<"pending" | "reviewed">()
+    .notNull()
+    .default("pending"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+/** Таблица чатов и каналов. */
+export const chats = pgTable("chats", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  url: text("url").notNull(),
+  description: text("description").default(""),
+  sort: integer("sort").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const communityRequestsRelations = relations(
+  communityRequests,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [communityRequests.userId],
+      references: [users.id],
+    }),
+  }),
+);
+
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Event = typeof events.$inferSelect;
 export type NewEvent = typeof events.$inferInsert;
 export type Registration = typeof registrations.$inferSelect;
 export type NewRegistration = typeof registrations.$inferInsert;
+export type CommunityRequest = typeof communityRequests.$inferSelect;
+export type NewCommunityRequest = typeof communityRequests.$inferInsert;
+export type Chat = typeof chats.$inferSelect;
+export type NewChat = typeof chats.$inferInsert;
