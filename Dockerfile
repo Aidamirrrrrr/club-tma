@@ -33,8 +33,9 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# Ensure cache directory is writable
-RUN mkdir -p .next/cache && chown -R nextjs:nodejs .next
+# Ensure cache and uploads directories are writable
+RUN mkdir -p .next/cache public/uploads \
+    && chown -R nextjs:nodejs .next public/uploads
 
 USER nextjs
 
