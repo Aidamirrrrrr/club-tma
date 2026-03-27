@@ -1,8 +1,7 @@
-import { and, asc, count, eq, ilike, inArray, ne, or, sql } from "drizzle-orm";
+import type { Prisma } from "@/generated/prisma/client";
 import type { EventStatus } from "@/constants/domain";
 import { db } from "@/db";
 import type { Event } from "@/db/schema";
-import { events, registrations, users } from "@/db/schema";
 
 interface ListEventsParams {
   filter: "upcoming" | "past" | "mine";
@@ -56,95 +55,92 @@ export async function listEvents({
   search,
   telegramId,
 }: ListEventsParams): Promise<EventListItem[]> {
-  const conditions = [];
+  const where: Prisma.EventWhereInput = {};
 
   const today = new Date().toISOString().slice(0, 10);
   if (filter === "upcoming") {
-    conditions.push(
-      and(
-        ne(events.status, "completed"),
-        ne(events.status, "cancelled"),
-        sql`${events.date} >= ${today}`,
-      ),
-    );
+    where.status = { notIn: ["completed", "cancelled"] };
+    where.date = { gte: today };
   } else if (filter === "past") {
-    conditions.push(
-      or(
-        eq(events.status, "completed"),
-        eq(events.status, "cancelled"),
-        sql`${events.date} < ${today}`,
-      ),
-    );
+    where.OR = [
+      { status: { in: ["completed", "cancelled"] } },
+      { date: { lt: today } },
+    ];
   } else if (filter === "mine" && telegramId) {
-    const userEvents = db
-      .select({ eventId: registrations.eventId })
-      .from(registrations)
-      .innerJoin(users, eq(users.id, registrations.userId))
-      .where(eq(users.telegramId, telegramId));
-    conditions.push(inArray(events.id, userEvents));
+    where.registrations = {
+      some: {
+        user: { telegramId },
+      },
+    };
   }
 
   if (search) {
-    conditions.push(
-      or(
-        ilike(events.title, `%${search}%`),
-        ilike(events.description, `%${search}%`),
-      ),
-    );
+    const searchFilter: Prisma.EventWhereInput = {
+      OR: [
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+      ],
+    };
+    if (where.OR) {
+      where.AND = [{ OR: where.OR }, searchFilter];
+      delete where.OR;
+    } else {
+      Object.assign(where, searchFilter);
+    }
   }
 
-  const where =
-    conditions.length > 1
-      ? and(...conditions)
-      : conditions.length === 1
-        ? conditions[0]
-        : undefined;
+  const rows = await db.event.findMany({
+    where,
+    include: {
+      _count: {
+        select: { registrations: true },
+      },
+    },
+    orderBy: { date: "asc" },
+  });
 
-  const participantCountSq = db
-    .select({
-      eventId: registrations.eventId,
-      count: count().as("count"),
-    })
-    .from(registrations)
-    .groupBy(registrations.eventId)
-    .as("pc");
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    date: row.date,
+    time: row.time,
+    location: row.location,
+    coverUrl: row.coverUrl,
+    maxParticipants: row.maxParticipants,
+    status: row.status,
+    createdBy: row.createdBy,
+    createdAt: row.createdAt,
+    participantCount: row._count.registrations,
+  }));
+}
 
-  return db
-    .select({
-      id: events.id,
-      title: events.title,
-      description: events.description,
-      date: events.date,
-      time: events.time,
-      location: events.location,
-      coverUrl: events.coverUrl,
-      maxParticipants: events.maxParticipants,
-      status: events.status,
-      createdBy: events.createdBy,
-      createdAt: events.createdAt,
-      participantCount: sql<number>`COALESCE(${participantCountSq.count}, 0)`,
-    })
-    .from(events)
-    .leftJoin(participantCountSq, eq(events.id, participantCountSq.eventId))
-    .where(where)
-    .orderBy(asc(events.date));
+export interface CreateEventInput {
+  title: string;
+  description?: string;
+  date: string;
+  time?: string;
+  location?: string;
+  coverUrl?: string;
+  maxParticipants?: number;
+  status?: EventStatus;
+  createdBy?: number;
 }
 
 export async function createEventRecord(
-  values: typeof events.$inferInsert,
+  values: CreateEventInput,
 ): Promise<Event> {
-  const [event] = await db.insert(events).values(values).returning();
-  return event;
+  return db.event.create({ data: values });
 }
 
 export async function getEventWithParticipants(
   eventId: number,
 ): Promise<EventDetailDto | null> {
-  const event = await db.query.events.findFirst({
-    where: eq(events.id, eventId),
-    with: {
+  const event = await db.event.findUnique({
+    where: { id: eventId },
+    include: {
       registrations: {
-        with: {
+        include: {
           user: true,
         },
       },
@@ -172,34 +168,24 @@ export async function getEventWithParticipants(
   };
 }
 
-export async function getEventById(
-  eventId: number,
-): Promise<Event | undefined> {
-  return db.query.events.findFirst({
-    where: eq(events.id, eventId),
+export async function getEventById(eventId: number): Promise<Event | null> {
+  return db.event.findUnique({
+    where: { id: eventId },
   });
 }
 
 export async function updateEventById(
   eventId: number,
   updates: UpdateEventInput,
-): Promise<Event | undefined> {
-  const [updated] = await db
-    .update(events)
-    .set(updates)
-    .where(eq(events.id, eventId))
-    .returning();
-
-  return updated;
+): Promise<Event | null> {
+  return db.event.update({
+    where: { id: eventId },
+    data: updates,
+  });
 }
 
-export async function deleteEventById(
-  eventId: number,
-): Promise<Event | undefined> {
-  const [deleted] = await db
-    .delete(events)
-    .where(eq(events.id, eventId))
-    .returning();
-
-  return deleted;
+export async function deleteEventById(eventId: number): Promise<Event | null> {
+  return db.event.delete({
+    where: { id: eventId },
+  });
 }

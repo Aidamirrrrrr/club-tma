@@ -1,8 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import type { User } from "@/db/schema";
-import { users } from "@/db/schema";
 
 function isDevAuthBypassEnabled(): boolean {
   return process.env.NODE_ENV === "development" && !process.env.BOT_TOKEN;
@@ -83,8 +81,8 @@ export async function getAuthUser(request: Request): Promise<User | null> {
     const tgUser = parseInitDataUser(initData);
     if (!tgUser) return null;
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.telegramId, String(tgUser.id)),
+    const user = await db.user.findFirst({
+      where: { telegramId: String(tgUser.id) },
     });
     return user ?? null;
   }
@@ -92,8 +90,8 @@ export async function getAuthUser(request: Request): Promise<User | null> {
   if (isDevAuthBypassEnabled()) {
     const userId = request.headers.get("x-user-id");
     if (userId) {
-      const user = await db.query.users.findFirst({
-        where: eq(users.id, Number(userId)),
+      const user = await db.user.findUnique({
+        where: { id: Number(userId) },
       });
       return user ?? null;
     }

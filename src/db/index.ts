@@ -1,25 +1,23 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import * as schema from "./schema";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@/generated/prisma/client";
 
 const g = globalThis as unknown as {
-  __pgClient?: postgres.Sql;
-  __db?: ReturnType<typeof drizzle<typeof schema>>;
+  __prisma?: PrismaClient;
 };
 
-function getDb() {
-  if (!g.__db) {
+function getPrisma() {
+  if (!g.__prisma) {
     const url = process.env.DATABASE_URL;
     if (!url) throw new Error("DATABASE_URL is not set");
-    g.__pgClient = postgres(url, { max: 10 });
-    g.__db = drizzle(g.__pgClient, { schema });
+    const adapter = new PrismaPg({ connectionString: url });
+    g.__prisma = new PrismaClient({ adapter });
   }
-  return g.__db;
+  return g.__prisma;
 }
 
-/** Drizzle-клиент БД (синглтон, переживает HMR). */
-export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
+/** Prisma-клиент БД (синглтон, переживает HMR). */
+export const db = new Proxy({} as PrismaClient, {
   get(_, prop) {
-    return (getDb() as unknown as Record<string | symbol, unknown>)[prop];
+    return (getPrisma() as unknown as Record<string | symbol, unknown>)[prop];
   },
 });

@@ -1,7 +1,5 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { users } from "@/db/schema";
 import { isRateLimited } from "@/lib/rate-limit";
 import { sanitizeHandle, sanitizeText, sanitizeUrl } from "@/lib/sanitize";
 import { parseInitDataUser, validateInitData } from "@/server/auth/telegram";
@@ -76,8 +74,8 @@ export async function POST(request: Request) {
 
     const telegramId = String(id);
 
-    const existing = await db.query.users.findFirst({
-      where: eq(users.telegramId, telegramId),
+    const existing = await db.user.findFirst({
+      where: { telegramId },
     });
 
     if (existing) {
@@ -85,31 +83,29 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "User is blocked" }, { status: 403 });
       }
 
-      const [updated] = await db
-        .update(users)
-        .set({
+      const updated = await db.user.update({
+        where: { id: existing.id },
+        data: {
           firstName: cleanFirstName,
           lastName: cleanLastName,
           username: cleanUsername,
           photoUrl: cleanPhotoUrl || existing.photoUrl,
-        })
-        .where(eq(users.telegramId, telegramId))
-        .returning();
+        },
+      });
 
       return NextResponse.json({ user: updated });
     }
 
-    const [newUser] = await db
-      .insert(users)
-      .values({
+    const newUser = await db.user.create({
+      data: {
         telegramId,
         firstName: cleanFirstName,
         lastName: cleanLastName,
         username: cleanUsername,
         photoUrl: cleanPhotoUrl,
         telegram: cleanUsername ? `@${cleanUsername}` : "",
-      })
-      .returning();
+      },
+    });
 
     return NextResponse.json({ user: newUser });
   } catch (error) {

@@ -1,8 +1,6 @@
-import { eq } from "drizzle-orm";
 import type { EventStatus } from "@/constants/domain";
 import { db } from "@/db";
 import type { Event, User } from "@/db/schema";
-import { registrations, users } from "@/db/schema";
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
@@ -80,8 +78,8 @@ export async function sendTelegramMessage(
 
 /** Уведомляет администраторов о создании нового мероприятия. */
 export async function notifyNewEvent(event: Event) {
-  const admins = await db.query.users.findMany({
-    where: eq(users.role, "admin"),
+  const admins = await db.user.findMany({
+    where: { role: "admin" },
   });
 
   const msg =
@@ -116,9 +114,9 @@ export async function notifyEventStatusChange(
   event: Event,
   newStatus: EventStatus,
 ) {
-  const regs = await db.query.registrations.findMany({
-    where: eq(registrations.eventId, event.id),
-    with: { user: true },
+  const regs = await db.registration.findMany({
+    where: { eventId: event.id },
+    include: { user: true },
   });
 
   const labels: Record<string, string> = {
@@ -139,7 +137,7 @@ export async function notifyEventStatusChange(
     regs
       .filter((registration) => registration.user?.telegramId)
       .map((registration) =>
-        sendTelegramMessage(registration.user?.telegramId, msg),
+        sendTelegramMessage(registration.user.telegramId, msg),
       ),
   );
 }

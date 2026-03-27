@@ -5,7 +5,7 @@
 Telegram Mini App для управления мероприятиями клуба. Fullstack Next.js 16 App Router.
 
 - **Frontend**: React 19 client components, Telegram Mini App SDK (`@telegram-apps/sdk-react`)
-- **Backend**: Next.js API routes (`src/app/api/`), Drizzle ORM + PostgreSQL
+- **Backend**: Next.js API routes (`src/app/api/`), Prisma 7 + PostgreSQL
 - **Auth**: Telegram `initData` HMAC-SHA256 validation (server-side), no cookies/sessions
 - **Styling**: TailwindCSS 4, shadcn/ui (Radix UI), `class-variance-authority`
 
@@ -24,7 +24,7 @@ Telegram Mini App для управления мероприятиями клу�
 1. Client reads auth state from `useTelegram()` hook (via `useSyncExternalStore`)
 2. API calls include `x-telegram-init-data` header (or `x-user-id` in dev)
 3. Server validates initData via `requireAuth()` / `requireAdmin()` before any DB access
-4. DB queries use Drizzle ORM (parameterized, no raw SQL strings)
+4. DB queries use Prisma ORM (parameterized, no raw SQL strings)
 
 ## Code Style
 
@@ -69,9 +69,9 @@ Required env vars: `DATABASE_URL`, `BOT_TOKEN`. See `.env.example`.
 
 ### Database
 
-- Schema: `src/db/schema.ts` — Drizzle `pgTable` definitions with relations
-- Connection: singleton via `globalThis` proxy (survives HMR)
-- Migrations: `pnpm db:push` (schema push, no migration files)
+- Schema: `prisma/schema.prisma` — Prisma schema definitions with relations
+- Connection: singleton via `globalThis` proxy (survives HMR), PrismaClient + `@prisma/adapter-pg`
+- Migrations: `pnpm db:push` (schema push) or `pnpm db:migrate` (migration files in `prisma/migrations/`)
 
 ## Deployment
 

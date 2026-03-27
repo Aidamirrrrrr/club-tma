@@ -1,7 +1,5 @@
-import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { events, registrations, users } from "@/db/schema";
 import { isRateLimited } from "@/lib/rate-limit";
 import { requireAuth } from "@/server/auth/telegram";
 
@@ -15,26 +13,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    const [
-      [totalUsers],
-      [totalEvents],
-      [completedEvents],
-      [totalRegistrations],
-    ] = await Promise.all([
-      db.select({ count: sql<number>`COUNT(*)` }).from(users),
-      db.select({ count: sql<number>`COUNT(*)` }).from(events),
-      db
-        .select({ count: sql<number>`COUNT(*)` })
-        .from(events)
-        .where(sql`${events.status} = 'completed'`),
-      db.select({ count: sql<number>`COUNT(*)` }).from(registrations),
-    ]);
+    const [totalUsers, totalEvents, completedEvents, totalRegistrations] =
+      await Promise.all([
+        db.user.count(),
+        db.event.count(),
+        db.event.count({ where: { status: "completed" } }),
+        db.registration.count(),
+      ]);
 
     return NextResponse.json({
-      totalUsers: totalUsers.count,
-      totalEvents: totalEvents.count,
-      completedEvents: completedEvents.count,
-      totalRegistrations: totalRegistrations.count,
+      totalUsers,
+      totalEvents,
+      completedEvents,
+      totalRegistrations,
     });
   } catch (error) {
     console.error("Stats error:", error);

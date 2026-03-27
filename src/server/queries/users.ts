@@ -1,8 +1,7 @@
-import { and, eq, ilike, or } from "drizzle-orm";
+import type { Prisma } from "@/generated/prisma/client";
 import type { UserRole } from "@/constants/domain";
 import { db } from "@/db";
 import type { User } from "@/db/schema";
-import { users } from "@/db/schema";
 
 interface ListUsersParams {
   search: string;
@@ -55,34 +54,25 @@ export async function listUsers({
   role,
   includeBlocked,
 }: ListUsersParams): Promise<UserListItem[]> {
-  const conditions = [];
+  const where: Prisma.UserWhereInput = {
+    blocked: includeBlocked,
+  };
 
   if (search) {
-    conditions.push(
-      or(
-        ilike(users.firstName, `%${search}%`),
-        ilike(users.lastName, `%${search}%`),
-        ilike(users.username, `%${search}%`),
-      ),
-    );
+    where.OR = [
+      { firstName: { contains: search, mode: "insensitive" } },
+      { lastName: { contains: search, mode: "insensitive" } },
+      { username: { contains: search, mode: "insensitive" } },
+    ];
   }
 
   if (role === "admin") {
-    conditions.push(eq(users.role, "admin"));
+    where.role = "admin";
   }
 
-  conditions.push(eq(users.blocked, includeBlocked));
-
-  const where =
-    conditions.length > 1
-      ? and(...conditions)
-      : conditions.length === 1
-        ? conditions[0]
-        : undefined;
-
-  return db.query.users.findMany({
+  return db.user.findMany({
     where,
-    columns: {
+    select: {
       id: true,
       firstName: true,
       lastName: true,
@@ -96,18 +86,18 @@ export async function listUsers({
       profileGradient: true,
       createdAt: true,
     },
-    orderBy: (table, { asc }) => [asc(table.firstName)],
+    orderBy: { firstName: "asc" },
   });
 }
 
 export async function getUserWithEvents(
   userId: number,
 ): Promise<UserDetailDto | null> {
-  const user = await db.query.users.findFirst({
-    where: eq(users.id, userId),
-    with: {
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    include: {
       registrations: {
-        with: {
+        include: {
           event: true,
         },
       },
@@ -133,12 +123,9 @@ export async function getUserWithEvents(
 export async function updateUserById(
   userId: number,
   updates: UpdateUserInput,
-): Promise<User | undefined> {
-  const [updated] = await db
-    .update(users)
-    .set(updates)
-    .where(eq(users.id, userId))
-    .returning();
-
-  return updated;
+): Promise<User | null> {
+  return db.user.update({
+    where: { id: userId },
+    data: updates,
+  });
 }

@@ -1,11 +1,7 @@
-import { and, count, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { events, registrations } from "@/db/schema";
 
 export async function registerForEvent(userId: number, eventId: number) {
-  const event = await db.query.events.findFirst({
-    where: eq(events.id, eventId),
-  });
+  const event = await db.event.findUnique({ where: { id: eventId } });
 
   if (!event) {
     return { status: "not_found" as const };
@@ -15,12 +11,9 @@ export async function registerForEvent(userId: number, eventId: number) {
     return { status: "closed" as const };
   }
 
-  const registration = await db.transaction(async (tx) => {
-    const existing = await tx.query.registrations.findFirst({
-      where: and(
-        eq(registrations.userId, userId),
-        eq(registrations.eventId, eventId),
-      ),
+  const registration = await db.$transaction(async (tx) => {
+    const existing = await tx.registration.findFirst({
+      where: { userId, eventId },
     });
 
     if (existing) {
@@ -28,21 +21,18 @@ export async function registerForEvent(userId: number, eventId: number) {
     }
 
     if (event.maxParticipants && event.maxParticipants > 0) {
-      const [{ value: currentCount }] = await tx
-        .select({ value: count() })
-        .from(registrations)
-        .where(eq(registrations.eventId, eventId));
+      const currentCount = await tx.registration.count({
+        where: { eventId },
+      });
 
       if (currentCount >= event.maxParticipants) {
         return "full" as const;
       }
     }
 
-    const [inserted] = await tx
-      .insert(registrations)
-      .values({ userId, eventId })
-      .returning();
-    return inserted;
+    return tx.registration.create({
+      data: { userId, eventId },
+    });
   });
 
   if (registration === "duplicate") {
@@ -61,16 +51,17 @@ export async function registerForEvent(userId: number, eventId: number) {
 }
 
 export async function unregisterFromEvent(userId: number, eventId: number) {
-  const [deleted] = await db
-    .delete(registrations)
-    .where(
-      and(eq(registrations.userId, userId), eq(registrations.eventId, eventId)),
-    )
-    .returning();
+  const existing = await db.registration.findFirst({
+    where: { userId, eventId },
+  });
 
-  if (!deleted) {
+  if (!existing) {
     return { status: "not_found" as const };
   }
+
+  const deleted = await db.registration.delete({
+    where: { id: existing.id },
+  });
 
   return { status: "deleted" as const, registration: deleted };
 }

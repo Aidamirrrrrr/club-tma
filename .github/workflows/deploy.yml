@@ -59,7 +59,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          source: "deploy/docker-compose.yml,deploy/nginx.conf,scripts/deploy/init-letsencrypt.sh,drizzle.config.ts,src/db/schema.ts"
+          source: "deploy/docker-compose.yml,deploy/nginx.conf,scripts/deploy/init-letsencrypt.sh,prisma/schema.prisma,prisma.config.ts"
           target: ~/club
 
       - name: Deploy via SSH
@@ -184,10 +184,11 @@ jobs:
             $DOCKER run --rm \
               --network club_default \
               --env-file .env \
-              -v "$PWD:/workspace" \
+              -v "$PWD/prisma/schema.prisma:/workspace/prisma/schema.prisma:ro" \
+              -v "$PWD/prisma.config.ts:/workspace/prisma.config.ts:ro" \
               -w /workspace \
               node:22-alpine \
-              sh -lc "corepack enable pnpm >/dev/null 2>&1 && pnpm dlx --package=drizzle-kit --package=drizzle-orm --package=postgres drizzle-kit push --config=drizzle.config.ts"
+              sh -c "npm init -y >/dev/null 2>&1 && npm install --no-package-lock prisma dotenv >/dev/null 2>&1 && npx prisma db push --schema=prisma/schema.prisma"
 
             # Configure Telegram webhook automatically
             if [ -n "$APP_URL_VALUE" ]; then

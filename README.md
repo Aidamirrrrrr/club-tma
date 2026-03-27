@@ -5,7 +5,7 @@
 ## Стек
 
 - **Next.js 16** + React 19, TypeScript
-- **PostgreSQL** + Drizzle ORM
+- **PostgreSQL** + Prisma 7
 - **TailwindCSS 4** + Radix UI (shadcn/ui)
 - **Telegram Mini App SDK** (`@telegram-apps/sdk-react`)
 - **Biome** — линтер и форматтер
@@ -70,9 +70,9 @@ pnpm dev
 | `pnpm lint`        | Проверка линтером (Biome)    |
 | `pnpm format`      | Форматирование кода (Biome)  |
 | `pnpm db:push`     | Применение схемы к БД        |
-| `pnpm db:generate` | Генерация миграции           |
+| `pnpm db:generate` | Генерация Prisma Client      |
 | `pnpm db:migrate`  | Применение миграций          |
-| `pnpm db:studio`   | Drizzle Studio (GUI для БД)  |
+| `pnpm db:studio`   | Prisma Studio (GUI для БД)   |
 | `pnpm db:seed`     | Заполнение тестовыми данными |
 
 ## Структура проекта
@@ -98,7 +98,7 @@ src/
 │   └── telegram.tsx          # Telegram SDK интеграция
 ├── db/
 │   ├── index.ts              # Подключение к БД (синглтон)
-│   └── schema.ts             # Drizzle-схема (users, events, registrations)
+│   └── schema.ts             # Реэкспорт типов Prisma (users, events, registrations)
 └── lib/
     ├── hooks.ts              # React-хуки (useDebounce)
     ├── notifications.ts      # Уведомления через Telegram Bot API

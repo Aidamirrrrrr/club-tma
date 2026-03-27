@@ -73,7 +73,7 @@ export function useProfile({
   useEffect(() => {
     if (enabled && userId) {
       loadProfile();
-    } else if (!enabled) {
+    } else {
       setLoading(false);
     }
   }, [enabled, loadProfile, userId]);

@@ -14,8 +14,8 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build
-RUN corepack enable pnpm && pnpm build
+# Generate Prisma client and build
+RUN corepack enable pnpm && npx prisma generate && pnpm build
 
 # --- Production ---
 FROM base AS runner

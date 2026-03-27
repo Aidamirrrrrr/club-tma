@@ -1,0 +1,103 @@
+generator client {
+    provider = "prisma-client"
+    output   = "../src/generated/prisma"
+}
+
+datasource db {
+    provider = "postgresql"
+}
+
+enum UserRole {
+    user
+    admin
+}
+
+enum EventStatus {
+    open
+    closed
+    cancelled
+    completed
+}
+
+enum CommunityRequestStatus {
+    pending
+    reviewed
+}
+
+model User {
+    id              Int      @id @default(autoincrement())
+    telegramId      String   @unique @map("telegram_id")
+    firstName       String   @map("first_name")
+    lastName        String?  @default("") @map("last_name")
+    username        String?  @default("")
+    photoUrl        String?  @default("") @map("photo_url")
+    bio             String?  @default("")
+    instagram       String?  @default("")
+    telegram        String?  @default("")
+    phone           String?  @default("")
+    profileGradient String?  @default("default") @map("profile_gradient")
+    role            UserRole @default(user)
+    blocked         Boolean  @default(false)
+    createdAt       DateTime @default(now()) @map("created_at")
+
+    registrations     Registration[]
+    createdEvents     Event[]            @relation("CreatedEvents")
+    communityRequests CommunityRequest[]
+
+    @@map("users")
+}
+
+model Event {
+    id              Int         @id @default(autoincrement())
+    title           String
+    description     String      @default("")
+    date            String
+    time            String      @default("")
+    location        String      @default("")
+    coverUrl        String?     @map("cover_url")
+    maxParticipants Int?        @default(0) @map("max_participants")
+    status          EventStatus @default(open)
+    createdBy       Int?        @map("created_by")
+    createdAt       DateTime    @default(now()) @map("created_at")
+
+    creator       User?          @relation("CreatedEvents", fields: [createdBy], references: [id])
+    registrations Registration[]
+
+    @@map("events")
+}
+
+model Registration {
+    id        Int      @id @default(autoincrement())
+    userId    Int      @map("user_id")
+    eventId   Int      @map("event_id")
+    createdAt DateTime @default(now()) @map("created_at")
+
+    user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+    event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, eventId])
+    @@map("registrations")
+}
+
+model CommunityRequest {
+    id        Int                    @id @default(autoincrement())
+    userId    Int                    @map("user_id")
+    message   String
+    status    CommunityRequestStatus @default(pending)
+    createdAt DateTime               @default(now()) @map("created_at")
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@map("community_requests")
+}
+
+model Chat {
+    id          Int      @id @default(autoincrement())
+    title       String
+    url         String
+    description String?  @default("")
+    sort        Int      @default(0)
+    createdAt   DateTime @default(now()) @map("created_at")
+
+    @@map("chats")
+}

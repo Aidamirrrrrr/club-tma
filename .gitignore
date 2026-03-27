@@ -42,6 +42,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
+# prisma
+/src/generated/prisma
+
 # database (commit the db, ignore temp WAL files)
 /data/*.db-shm
 /data/*.db-wal
