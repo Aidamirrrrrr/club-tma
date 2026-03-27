@@ -1,4 +1,4 @@
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import type { UserRole } from "@/constants/domain";
 import { db } from "@/db";
 import type { User } from "@/db/schema";
@@ -124,8 +124,18 @@ export async function updateUserById(
   userId: number,
   updates: UpdateUserInput,
 ): Promise<User | null> {
-  return db.user.update({
-    where: { id: userId },
-    data: updates,
-  });
+  try {
+    return await db.user.update({
+      where: { id: userId },
+      data: updates,
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }

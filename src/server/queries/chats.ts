@@ -1,3 +1,4 @@
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/db";
 import type { Chat } from "@/db/schema";
 
@@ -27,14 +28,34 @@ export async function updateChatById(
   chatId: number,
   updates: UpdateChatInput,
 ): Promise<Chat | null> {
-  return db.chat.update({
-    where: { id: chatId },
-    data: updates,
-  });
+  try {
+    return await db.chat.update({
+      where: { id: chatId },
+      data: updates,
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function deleteChatById(chatId: number): Promise<Chat | null> {
-  return db.chat.delete({
-    where: { id: chatId },
-  });
+  try {
+    return await db.chat.delete({
+      where: { id: chatId },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }

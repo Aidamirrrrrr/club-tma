@@ -1,4 +1,4 @@
-import type { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 import type { EventStatus } from "@/constants/domain";
 import { db } from "@/db";
 import type { Event } from "@/db/schema";
@@ -178,14 +178,34 @@ export async function updateEventById(
   eventId: number,
   updates: UpdateEventInput,
 ): Promise<Event | null> {
-  return db.event.update({
-    where: { id: eventId },
-    data: updates,
-  });
+  try {
+    return await db.event.update({
+      where: { id: eventId },
+      data: updates,
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function deleteEventById(eventId: number): Promise<Event | null> {
-  return db.event.delete({
-    where: { id: eventId },
-  });
+  try {
+    return await db.event.delete({
+      where: { id: eventId },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }

@@ -1,3 +1,4 @@
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/db";
 import type { CommunityRequest } from "@/db/schema";
 
@@ -58,16 +59,36 @@ export async function updateCommunityRequestStatus(
   requestId: number,
   status: CommunityRequestStatus,
 ): Promise<CommunityRequest | null> {
-  return db.communityRequest.update({
-    where: { id: requestId },
-    data: { status },
-  });
+  try {
+    return await db.communityRequest.update({
+      where: { id: requestId },
+      data: { status },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function deleteCommunityRequestById(
   requestId: number,
 ): Promise<CommunityRequest | null> {
-  return db.communityRequest.delete({
-    where: { id: requestId },
-  });
+  try {
+    return await db.communityRequest.delete({
+      where: { id: requestId },
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2025"
+    ) {
+      return null;
+    }
+    throw error;
+  }
 }
