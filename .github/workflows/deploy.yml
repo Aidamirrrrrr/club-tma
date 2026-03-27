@@ -160,7 +160,7 @@ jobs:
               -v "$PWD:/workspace" \
               -w /workspace \
               node:22-alpine \
-              sh -lc "corepack enable pnpm >/dev/null 2>&1 && pnpm dlx drizzle-kit push --config=drizzle.config.ts"
+              sh -lc "corepack enable pnpm >/dev/null 2>&1 && pnpm dlx --package=drizzle-kit --package=drizzle-orm --package=postgres drizzle-kit push --config=drizzle.config.ts"
 
             # Cleanup old images
             $DOCKER image prune -f
