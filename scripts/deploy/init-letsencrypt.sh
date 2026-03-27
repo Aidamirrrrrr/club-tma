@@ -51,6 +51,10 @@ resolve_docker() {
 }
 
 DOCKER="$(resolve_docker)"
+if [ -z "$DOCKER" ]; then
+  echo "Docker не найден. Установите Docker на сервере или сначала запустите scripts/deploy/setup-server.sh" >&2
+  exit 127
+fi
 
 compose() {
   $DOCKER compose -p club --env-file "$APP_DIR/.env" -f "$DEPLOY_DIR/docker-compose.yml" "$@"

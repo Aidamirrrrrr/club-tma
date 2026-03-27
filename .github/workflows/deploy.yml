@@ -65,6 +65,8 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
+            set -euo pipefail
+
             cd ~/club
             export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/snap/bin:$PATH"
 
@@ -81,11 +83,24 @@ jobs:
                 fi
               done
 
+              if command -v sudo >/dev/null 2>&1; then
+                for candidate in /usr/bin/docker /usr/local/bin/docker /snap/bin/docker; do
+                  if sudo test -x "$candidate" 2>/dev/null; then
+                    echo "sudo $candidate"
+                    return
+                  fi
+                done
+              fi
+
               echo "Docker не найден на сервере. Сначала выполните scripts/deploy/setup-server.sh или установите Docker вручную." >&2
               exit 127
             }
 
             DOCKER="$(resolve_docker)"
+            if [ -z "$DOCKER" ]; then
+              echo "Docker не найден на сервере. Сначала выполните scripts/deploy/setup-server.sh или установите Docker вручную." >&2
+              exit 127
+            fi
 
             COMPOSE="$DOCKER compose -p club --env-file .env -f deploy/docker-compose.yml"
 
