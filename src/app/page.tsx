@@ -7,20 +7,13 @@ import {
   MapPin,
   MessageSquarePlus,
   MessagesSquare,
-  TrendingUp,
-  UserCheck,
   Users,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useTelegram } from "@/components/telegram";
-import {
-  AnimatedCounter,
-  EmptyState,
-  EventCardSkeleton,
-  StatCardSkeleton,
-} from "@/components/ui/animated";
+import { EmptyState, EventCardSkeleton } from "@/components/ui/animated";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { PageLoader } from "@/components/ui/spinner";
@@ -39,18 +32,10 @@ interface EventPreview {
   status: string;
 }
 
-interface Stats {
-  totalUsers: number;
-  totalEvents: number;
-  completedEvents: number;
-  totalRegistrations: number;
-}
-
 /** Главная страница: приветствие, статистика, ближайшие мероприятия. */
 export default function HomePage() {
   const { dbUser, isLoading, authHeaders } = useTelegram();
   const [events, setEvents] = useState<EventPreview[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
@@ -62,16 +47,12 @@ export default function HomePage() {
     async function load() {
       try {
         const headers = authHeaders();
-        const [eventsRes, statsRes] = await Promise.all([
-          fetch("/api/events?filter=upcoming", { headers }),
-          fetch("/api/stats", { headers }),
-        ]);
+        const eventsRes = await fetch("/api/events?filter=upcoming", {
+          headers,
+        });
         if (eventsRes.ok) {
           const data = await eventsRes.json();
           setEvents(data.slice(0, 5));
-        }
-        if (statsRes.ok) {
-          setStats(await statsRes.json());
         }
       } catch (e) {
         console.error(e);
@@ -105,54 +86,6 @@ export default function HomePage() {
           участниками и будь в курсе событий клуба.
         </p>
       </section>
-
-      {loadingData ? (
-        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-          <StatCardSkeleton />
-        </section>
-      ) : stats ? (
-        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Card className="card-interactive animate-slide-up stagger-1 p-4">
-            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary animate-icon-bounce">
-              <Users className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <p className="text-2xl font-bold tracking-tight animate-number-pop stagger-1">
-              <AnimatedCounter value={stats.totalUsers} />
-            </p>
-            <p className="text-[11px] text-muted-foreground">Участников</p>
-          </Card>
-          <Card className="card-interactive animate-slide-up stagger-2 p-4">
-            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary animate-icon-bounce stagger-2">
-              <CalendarDays className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <p className="text-2xl font-bold tracking-tight animate-number-pop stagger-2">
-              <AnimatedCounter value={stats.totalEvents} />
-            </p>
-            <p className="text-[11px] text-muted-foreground">Мероприятий</p>
-          </Card>
-          <Card className="card-interactive animate-slide-up stagger-3 p-4">
-            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary animate-icon-bounce stagger-3">
-              <UserCheck className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <p className="text-2xl font-bold tracking-tight animate-number-pop stagger-3">
-              <AnimatedCounter value={stats.totalRegistrations} />
-            </p>
-            <p className="text-[11px] text-muted-foreground">Регистраций</p>
-          </Card>
-          <Card className="card-interactive animate-slide-up stagger-4 p-4">
-            <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary animate-icon-bounce stagger-4">
-              <TrendingUp className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <p className="text-2xl font-bold tracking-tight animate-number-pop stagger-4">
-              <AnimatedCounter value={stats.completedEvents} />
-            </p>
-            <p className="text-[11px] text-muted-foreground">Проведено</p>
-          </Card>
-        </section>
-      ) : null}
 
       <section className="animate-slide-up stagger-5 grid grid-cols-2 gap-3">
         <Link href="/events" className="flex">
