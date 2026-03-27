@@ -7,6 +7,7 @@ import { MainContent } from "@/components/layout/main-content";
 import { ToastProvider } from "@/components/ui/toast";
 import {
   TelegramBackButtonManager,
+  TelegramGate,
   TelegramInit,
 } from "@/integrations/telegram";
 
@@ -49,14 +50,16 @@ export default function RootLayout({
       <body className={`${helveticaNeue.variable} antialiased`}>
         <TelegramInit />
         <ToastProvider>
-          <TelegramBackButtonManager />
-          <div className="flex min-h-screen lg:h-screen lg:overflow-hidden">
-            <DesktopSidebar />
-            <div className="min-w-0 flex-1 overflow-x-hidden lg:overflow-y-auto">
-              <MainContent>{children}</MainContent>
+          <TelegramGate>
+            <TelegramBackButtonManager />
+            <div className="flex min-h-screen lg:h-screen lg:overflow-hidden">
+              <DesktopSidebar />
+              <div className="min-w-0 flex-1 overflow-x-hidden lg:overflow-y-auto">
+                <MainContent>{children}</MainContent>
+              </div>
             </div>
-          </div>
-          <BottomNav />
+            <BottomNav />
+          </TelegramGate>
         </ToastProvider>
       </body>
     </html>

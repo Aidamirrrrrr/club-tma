@@ -34,6 +34,7 @@ let dbUser: User | null = null;
 let rawInitData: string | undefined;
 let isLoading = true;
 let sdkReady = false;
+let isTelegramApp = true;
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -117,14 +118,23 @@ export function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-let snapshot: { dbUser: User | null; isLoading: boolean } = {
+let snapshot: {
+  dbUser: User | null;
+  isLoading: boolean;
+  isTelegramApp: boolean;
+} = {
   dbUser,
   isLoading,
+  isTelegramApp,
 };
 /** Снимок состояния (для `useSyncExternalStore`). */
 export function getSnapshot() {
-  if (snapshot.dbUser !== dbUser || snapshot.isLoading !== isLoading) {
-    snapshot = { dbUser, isLoading };
+  if (
+    snapshot.dbUser !== dbUser ||
+    snapshot.isLoading !== isLoading ||
+    snapshot.isTelegramApp !== isTelegramApp
+  ) {
+    snapshot = { dbUser, isLoading, isTelegramApp };
   }
   return snapshot;
 }
@@ -285,6 +295,7 @@ export async function bootstrapTelegram() {
         await fetchOrCreateUser(createMockUser());
       } else {
         console.error("No Telegram user data available");
+        isTelegramApp = false;
       }
     } catch (e) {
       console.error("Auth flow error:", e);
@@ -296,6 +307,7 @@ export async function bootstrapTelegram() {
     await fetchOrCreateUser(createMockUser());
   } else {
     console.error("TMA SDK failed to initialize");
+    isTelegramApp = false;
   }
 
   isLoading = false;
