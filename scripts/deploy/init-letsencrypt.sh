@@ -22,8 +22,38 @@ APP_DIR="$HOME/club"
 DEPLOY_DIR="$APP_DIR/deploy"
 cd "$DEPLOY_DIR"
 
+resolve_docker() {
+  export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/snap/bin:$PATH"
+
+  if command -v docker >/dev/null 2>&1; then
+    echo "docker"
+    return
+  fi
+
+  for candidate in /usr/bin/docker /usr/local/bin/docker /snap/bin/docker; do
+    if [ -x "$candidate" ]; then
+      echo "$candidate"
+      return
+    fi
+  done
+
+  if command -v sudo >/dev/null 2>&1; then
+    for candidate in /usr/bin/docker /usr/local/bin/docker /snap/bin/docker; do
+      if sudo test -x "$candidate" 2>/dev/null; then
+        echo "sudo $candidate"
+        return
+      fi
+    done
+  fi
+
+  echo "Docker не найден. Установите Docker на сервере или сначала запустите scripts/deploy/setup-server.sh" >&2
+  exit 127
+}
+
+DOCKER="$(resolve_docker)"
+
 compose() {
-  docker compose -p club --env-file "$APP_DIR/.env" -f "$DEPLOY_DIR/docker-compose.yml" "$@"
+  $DOCKER compose -p club --env-file "$APP_DIR/.env" -f "$DEPLOY_DIR/docker-compose.yml" "$@"
 }
 
 info "Настраиваем nginx для домена $DOMAIN..."
@@ -44,14 +74,14 @@ http {
 }
 NGINX
 
-docker run -d --name nginx-temp \
+$DOCKER run -d --name nginx-temp \
   -v "$(pwd)/nginx-temp.conf:/etc/nginx/nginx.conf:ro" \
   -v "club_certbot-www:/var/www/certbot" \
   -p 80:80 \
   nginx:alpine || {
-    docker stop nginx-temp 2>/dev/null || true
-    docker rm nginx-temp 2>/dev/null || true
-    docker run -d --name nginx-temp \
+    $DOCKER stop nginx-temp 2>/dev/null || true
+    $DOCKER rm nginx-temp 2>/dev/null || true
+    $DOCKER run -d --name nginx-temp \
       -v "$(pwd)/nginx-temp.conf:/etc/nginx/nginx.conf:ro" \
       -v "club_certbot-www:/var/www/certbot" \
       -p 80:80 \
@@ -67,7 +97,7 @@ compose run --rm certbot certonly \
   --no-eff-email \
   -d "$DOMAIN"
 
-docker stop nginx-temp 2>/dev/null && docker rm nginx-temp 2>/dev/null || true
+$DOCKER stop nginx-temp 2>/dev/null && $DOCKER rm nginx-temp 2>/dev/null || true
 rm -f nginx-temp.conf
 
 info "Перезапускаем с SSL..."

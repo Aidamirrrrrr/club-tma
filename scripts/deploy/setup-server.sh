@@ -15,6 +15,8 @@ APP_DIR="$HOME/club"
 DEPLOY_DIR="$APP_DIR/deploy"
 INIT_SSL_SCRIPT="$APP_DIR/scripts/deploy/init-letsencrypt.sh"
 
+export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/snap/bin:$PATH"
+
 compose() {
   docker compose -p club --env-file "$APP_DIR/.env" -f "$DEPLOY_DIR/docker-compose.yml" "$@"
 }

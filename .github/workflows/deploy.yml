@@ -66,11 +66,31 @@ jobs:
           port: ${{ secrets.SSH_PORT || 22 }}
           script: |
             cd ~/club
+            export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/snap/bin:$PATH"
 
-            COMPOSE="docker compose -p club --env-file .env -f deploy/docker-compose.yml"
+            resolve_docker() {
+              if command -v docker >/dev/null 2>&1; then
+                echo "docker"
+                return
+              fi
+
+              for candidate in /usr/bin/docker /usr/local/bin/docker /snap/bin/docker; do
+                if [ -x "$candidate" ]; then
+                  echo "$candidate"
+                  return
+                fi
+              done
+
+              echo "Docker не найден на сервере. Сначала выполните scripts/deploy/setup-server.sh или установите Docker вручную." >&2
+              exit 127
+            }
+
+            DOCKER="$(resolve_docker)"
+
+            COMPOSE="$DOCKER compose -p club --env-file .env -f deploy/docker-compose.yml"
 
             # Login to GHCR
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | $DOCKER login ghcr.io -u ${{ github.actor }} --password-stdin
 
             # Set image tag
             export IMAGE=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
@@ -100,4 +120,4 @@ jobs:
               node -e "require('child_process').execSync('npx drizzle-kit push', { stdio: 'inherit' })"
 
             # Cleanup old images
-            docker image prune -f
+            $DOCKER image prune -f
