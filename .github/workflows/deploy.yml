@@ -59,7 +59,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          source: "deploy/docker-compose.yml,deploy/nginx.conf,scripts/deploy/init-letsencrypt.sh"
+          source: "deploy/docker-compose.yml,deploy/nginx.conf,scripts/deploy/init-letsencrypt.sh,drizzle.config.ts,src/db/schema.ts"
           target: ~/club
 
       - name: Deploy via SSH
@@ -73,7 +73,7 @@ jobs:
             set -euo pipefail
 
             cd ~/club
-            mkdir -p deploy scripts/deploy
+            mkdir -p deploy scripts/deploy src/db
             export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/snap/bin:$PATH"
 
             resolve_docker() {
@@ -113,6 +113,7 @@ jobs:
             POSTGRES_USER=${{ secrets.POSTGRES_USER || 'club' }}
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_DB=${{ secrets.POSTGRES_DB || 'club' }}
+            DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER || 'club' }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ secrets.POSTGRES_DB || 'club' }}
             BOT_TOKEN=${{ secrets.BOT_TOKEN }}
             DOMAIN=${{ secrets.DOMAIN }}
             EMAIL=${{ secrets.EMAIL }}
@@ -153,8 +154,13 @@ jobs:
             fi
 
             # Run migrations
-            $COMPOSE exec -T app \
-              node -e "require('child_process').execSync('npx drizzle-kit push', { stdio: 'inherit' })"
+            $DOCKER run --rm \
+              --network club_default \
+              --env-file .env \
+              -v "$PWD:/workspace" \
+              -w /workspace \
+              node:22-alpine \
+              sh -lc "corepack enable pnpm >/dev/null 2>&1 && pnpm dlx drizzle-kit push --config=drizzle.config.ts"
 
             # Cleanup old images
             $DOCKER image prune -f
