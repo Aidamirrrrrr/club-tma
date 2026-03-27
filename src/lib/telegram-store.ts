@@ -60,7 +60,7 @@ export function authHeaders(): Record<string, string> {
   const h: Record<string, string> = {};
   if (rawInitData) {
     h["x-telegram-init-data"] = rawInitData;
-  } else if (dbUser) {
+  } else if (process.env.NODE_ENV === "development" && dbUser) {
     h["x-user-id"] = String(dbUser.id);
   }
   return h;

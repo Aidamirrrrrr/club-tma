@@ -21,14 +21,16 @@
 
 ## Переменные окружения
 
-| Переменная          | Описание                              | Обязательна |
-| ------------------- | ------------------------------------- | :---------: |
-| `POSTGRES_USER`     | Пользователь PostgreSQL               |             |
-| `POSTGRES_PASSWORD` | Пароль PostgreSQL                     |      ✓      |
-| `POSTGRES_DB`       | Имя базы данных                       |             |
-| `DATABASE_URL`      | Строка подключения (для локальной БД) |      ✓      |
-| `BOT_TOKEN`         | Токен Telegram-бота                   |      ✓      |
-| `PORT`              | Порт приложения (по умолчанию 3000)   |             |
+| Переменная                | Описание                              | Обязательна |
+| ------------------------- | ------------------------------------- | :---------: |
+| `POSTGRES_USER`           | Пользователь PostgreSQL               |             |
+| `POSTGRES_PASSWORD`       | Пароль PostgreSQL                     |      ✓      |
+| `POSTGRES_DB`             | Имя базы данных                       |             |
+| `DATABASE_URL`            | Строка подключения (для локальной БД) |      ✓      |
+| `BOT_TOKEN`               | Токен Telegram-бота                   |      ✓      |
+| `TELEGRAM_WEBHOOK_SECRET` | Секрет для Telegram webhook           |             |
+| `APP_URL`                 | Полный URL mini app                   |             |
+| `PORT`                    | Порт приложения (по умолчанию 3000)   |             |
 
 Создайте `.env` файл в корне проекта (см. `.env.example`):
 
@@ -38,6 +40,8 @@ POSTGRES_PASSWORD=your_secure_password
 POSTGRES_DB=club
 DATABASE_URL=postgresql://club:your_secure_password@localhost:5432/club
 BOT_TOKEN=123456789:ABCDefGHijKLmnopqrStuVwxyz
+TELEGRAM_WEBHOOK_SECRET=super-secret-token
+APP_URL=https://events.example.com
 ```
 
 ## Запуск (локально)
@@ -136,6 +140,12 @@ src/
 | ------ | ----------- | -------------------------- | --------- |
 | `POST` | `/api/auth` | Авторизация через Telegram | Публичный |
 
+### Telegram Bot Webhook
+
+| Метод  | Путь                    | Описание                               | Доступ   |
+| ------ | ----------------------- | -------------------------------------- | -------- |
+| `POST` | `/api/telegram/webhook` | Обработка `/start` и выдача кнопки app | Telegram |
+
 ### Мероприятия
 
 | Метод    | Путь                       | Описание                   | Доступ   |
@@ -197,6 +207,14 @@ docker compose -p club --env-file .env -f deploy/docker-compose.yml up -d
 1. Собирается Docker-образ → пушится в GitHub Container Registry
 2. По SSH копируются файлы из `deploy/` и `scripts/deploy/` на сервер
 3. Выполняется `docker compose pull` + `up -d` + миграции
+
+### Настройка кнопки запуска по `/start`
+
+1. Укажите `APP_URL` в GitHub Secrets или хотя бы `DOMAIN`.
+2. Деплой сам создаст `TELEGRAM_WEBHOOK_SECRET`, если он ещё не задан.
+3. Деплой сам вызовет `setWebhook` для `https://YOUR_DOMAIN/api/telegram/webhook`.
+
+После этого бот будет отвечать на `/start` сообщением с кнопкой `Запустить приложение` автоматически после каждого деплоя.
 
 #### Настройка секретов
 

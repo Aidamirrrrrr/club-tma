@@ -6,8 +6,49 @@ import { registrations, users } from "@/db/schema";
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
+interface TelegramSendMessageOptions {
+  replyMarkup?: Record<string, unknown>;
+}
+
+function getMiniAppUrl(): string | null {
+  const rawUrl =
+    process.env.APP_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.DOMAIN;
+
+  if (!rawUrl) return null;
+  if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+    return rawUrl;
+  }
+
+  return `https://${rawUrl}`;
+}
+
+export function getTelegramMiniAppLaunchMarkup(): Record<
+  string,
+  unknown
+> | null {
+  const miniAppUrl = getMiniAppUrl();
+  if (!miniAppUrl) return null;
+
+  return {
+    inline_keyboard: [
+      [
+        {
+          text: "Запустить приложение",
+          web_app: { url: miniAppUrl },
+        },
+      ],
+    ],
+  };
+}
+
 /** Отправляет сообщение через Telegram Bot API. */
-async function sendTelegramMessage(chatId: string, text: string) {
+export async function sendTelegramMessage(
+  chatId: string,
+  text: string,
+  options: TelegramSendMessageOptions = {},
+) {
   if (!BOT_TOKEN) {
     console.log("[notify skip] No BOT_TOKEN");
     return;
@@ -23,6 +64,7 @@ async function sendTelegramMessage(chatId: string, text: string) {
           chat_id: chatId,
           text,
           parse_mode: "HTML",
+          reply_markup: options.replyMarkup,
         }),
       },
     );

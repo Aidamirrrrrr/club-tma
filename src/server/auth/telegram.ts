@@ -4,6 +4,10 @@ import { db } from "@/db";
 import type { User } from "@/db/schema";
 import { users } from "@/db/schema";
 
+function isDevAuthBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && !process.env.BOT_TOKEN;
+}
+
 /**
  * Валидирует initData Telegram Mini App через HMAC-SHA256.
  * @see https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
@@ -11,7 +15,7 @@ import { users } from "@/db/schema";
 export function validateInitData(initData: string): boolean {
   const botToken = process.env.BOT_TOKEN;
   if (!botToken) {
-    if (process.env.NODE_ENV === "development") return true;
+    if (isDevAuthBypassEnabled()) return true;
     console.error("BOT_TOKEN is not set");
     return false;
   }
@@ -70,7 +74,7 @@ export function parseInitDataUser(initData: string): {
 
 /**
  * Возвращает авторизованного пользователя из запроса.
- * Проверяет заголовок `x-telegram-init-data` или `x-user-id` (dev).
+ * Проверяет заголовок `x-telegram-init-data` или `x-user-id` в локальной dev-среде.
  */
 export async function getAuthUser(request: Request): Promise<User | null> {
   const initData = request.headers.get("x-telegram-init-data");
@@ -85,7 +89,7 @@ export async function getAuthUser(request: Request): Promise<User | null> {
     return user ?? null;
   }
 
-  if (process.env.NODE_ENV === "development" && !process.env.BOT_TOKEN) {
+  if (isDevAuthBypassEnabled()) {
     const userId = request.headers.get("x-user-id");
     if (userId) {
       const user = await db.query.users.findFirst({

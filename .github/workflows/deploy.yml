@@ -76,6 +76,31 @@ jobs:
             mkdir -p deploy scripts/deploy src/db
             export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/snap/bin:$PATH"
 
+            EXISTING_WEBHOOK_SECRET=""
+            EXISTING_APP_URL=""
+            if [ -f .env ]; then
+              EXISTING_WEBHOOK_SECRET=$(grep '^TELEGRAM_WEBHOOK_SECRET=' .env | cut -d= -f2- || true)
+              EXISTING_APP_URL=$(grep '^APP_URL=' .env | cut -d= -f2- || true)
+            fi
+
+            if [ -n "${{ secrets.TELEGRAM_WEBHOOK_SECRET }}" ]; then
+              TELEGRAM_WEBHOOK_SECRET_VALUE="${{ secrets.TELEGRAM_WEBHOOK_SECRET }}"
+            elif [ -n "$EXISTING_WEBHOOK_SECRET" ]; then
+              TELEGRAM_WEBHOOK_SECRET_VALUE="$EXISTING_WEBHOOK_SECRET"
+            else
+              TELEGRAM_WEBHOOK_SECRET_VALUE=$(openssl rand -hex 32)
+            fi
+
+            if [ -n "${{ secrets.APP_URL }}" ]; then
+              APP_URL_VALUE="${{ secrets.APP_URL }}"
+            elif [ -n "$EXISTING_APP_URL" ]; then
+              APP_URL_VALUE="$EXISTING_APP_URL"
+            elif [ -n "${{ secrets.DOMAIN }}" ]; then
+              APP_URL_VALUE="https://${{ secrets.DOMAIN }}"
+            else
+              APP_URL_VALUE=""
+            fi
+
             resolve_docker() {
               if command -v docker >/dev/null 2>&1; then
                 echo "docker"
@@ -115,6 +140,8 @@ jobs:
             POSTGRES_DB=${{ secrets.POSTGRES_DB || 'club' }}
             DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER || 'club' }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ secrets.POSTGRES_DB || 'club' }}
             BOT_TOKEN=${{ secrets.BOT_TOKEN }}
+            TELEGRAM_WEBHOOK_SECRET=$TELEGRAM_WEBHOOK_SECRET_VALUE
+            APP_URL=$APP_URL_VALUE
             DOMAIN=${{ secrets.DOMAIN }}
             EMAIL=${{ secrets.EMAIL }}
             EOF
@@ -161,6 +188,24 @@ jobs:
               -w /workspace \
               node:22-alpine \
               sh -lc "corepack enable pnpm >/dev/null 2>&1 && pnpm dlx --package=drizzle-kit --package=drizzle-orm --package=postgres drizzle-kit push --config=drizzle.config.ts"
+
+            # Configure Telegram webhook automatically
+            if [ -n "$APP_URL_VALUE" ]; then
+              WEBHOOK_BASE_URL=${APP_URL_VALUE%/}
+            elif [ -n "$DOMAIN" ]; then
+              WEBHOOK_BASE_URL="https://$DOMAIN"
+            else
+              WEBHOOK_BASE_URL=""
+            fi
+
+            if [ -n "$WEBHOOK_BASE_URL" ] && [ -n "$TELEGRAM_WEBHOOK_SECRET_VALUE" ]; then
+              WEBHOOK_URL="$WEBHOOK_BASE_URL/api/telegram/webhook"
+              curl -fsS -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/setWebhook" \
+                -H "Content-Type: application/json" \
+                -d "{\"url\":\"$WEBHOOK_URL\",\"secret_token\":\"$TELEGRAM_WEBHOOK_SECRET_VALUE\",\"allowed_updates\":[\"message\"]}"
+            else
+              echo "Skip Telegram webhook setup: APP_URL/DOMAIN is not configured."
+            fi
 
             # Cleanup old images
             $DOCKER image prune -f

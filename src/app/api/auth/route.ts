@@ -6,6 +6,10 @@ import { isRateLimited } from "@/lib/rate-limit";
 import { sanitizeHandle, sanitizeText, sanitizeUrl } from "@/lib/sanitize";
 import { parseInitDataUser, validateInitData } from "@/server/auth/telegram";
 
+function isDevAuthBypassEnabled(): boolean {
+  return process.env.NODE_ENV === "development" && !process.env.BOT_TOKEN;
+}
+
 /** POST /api/auth — авторизация/регистрация через Telegram initData. */
 export async function POST(request: Request) {
   try {
@@ -46,7 +50,7 @@ export async function POST(request: Request) {
       }
       ({ id, first_name, last_name, username, photo_url } = parsed);
     } else {
-      if (process.env.NODE_ENV !== "development" && process.env.BOT_TOKEN) {
+      if (!isDevAuthBypassEnabled()) {
         return NextResponse.json(
           { error: "initData required" },
           { status: 401 },
