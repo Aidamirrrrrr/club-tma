@@ -93,7 +93,7 @@ $DOCKER run -d --name nginx-temp \
   }
 
 info "Запрашиваем сертификат Let's Encrypt для $DOMAIN..."
-compose run --rm certbot certonly \
+compose run --rm --no-deps --entrypoint certbot certbot certonly \
   --webroot \
   --webroot-path=/var/www/certbot \
   --email "$EMAIL" \

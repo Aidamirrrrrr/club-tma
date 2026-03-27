@@ -146,7 +146,7 @@ jobs:
 
             # Init SSL if certificate doesn't exist yet
             if [ -n "$DOMAIN" ] && [ -n "$EMAIL" ]; then
-              if ! $COMPOSE exec -T nginx test -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem 2>/dev/null; then
+              if ! $COMPOSE run --rm --no-deps --entrypoint sh certbot -c "test -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem"; then
                 chmod +x scripts/deploy/init-letsencrypt.sh
                 bash scripts/deploy/init-letsencrypt.sh "$DOMAIN" "$EMAIL"
               fi
