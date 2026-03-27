@@ -1,9 +1,15 @@
-import { desc, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { communityRequests, users } from "@/db/schema";
-import { requireAdmin, requireAuth } from "@/lib/telegram";
-import { isRateLimited, sanitizeRequiredText } from "@/lib/validation";
+import { isRateLimited } from "@/lib/rate-limit";
+import { sanitizeRequiredText } from "@/lib/sanitize";
+import { requireAdmin, requireAuth } from "@/server/auth/telegram";
+import {
+  createCommunityRequest,
+  listCommunityRequests,
+} from "@/server/queries/community-requests";
+import {
+  serializeCommunityRequest,
+  serializeCommunityRequestMutation,
+} from "@/server/serializers/community-requests";
 
 /** GET /api/community-requests — список запросов (только для админов). */
 export async function GET(request: Request) {
@@ -15,23 +21,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    const rows = await db
-      .select({
-        id: communityRequests.id,
-        message: communityRequests.message,
-        status: communityRequests.status,
-        createdAt: communityRequests.createdAt,
-        userId: communityRequests.userId,
-        firstName: users.firstName,
-        lastName: users.lastName,
-        username: users.username,
-        photoUrl: users.photoUrl,
-      })
-      .from(communityRequests)
-      .leftJoin(users, eq(communityRequests.userId, users.id))
-      .orderBy(desc(communityRequests.createdAt));
+    const rows = await listCommunityRequests();
 
-    return NextResponse.json(rows);
+    return NextResponse.json(rows.map(serializeCommunityRequest));
   } catch (e) {
     console.error("GET /api/community-requests error:", e);
     return NextResponse.json(
@@ -60,12 +52,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const [row] = await db
-      .insert(communityRequests)
-      .values({ userId: auth.user.id, message })
-      .returning();
+    const row = await createCommunityRequest(auth.user.id, message);
 
-    return NextResponse.json(row, { status: 201 });
+    return NextResponse.json(serializeCommunityRequestMutation(row), {
+      status: 201,
+    });
   } catch (e) {
     console.error("POST /api/community-requests error:", e);
     return NextResponse.json(

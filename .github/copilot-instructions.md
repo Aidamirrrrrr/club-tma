@@ -76,4 +76,4 @@ Required env vars: `DATABASE_URL`, `BOT_TOKEN`. See `.env.example`.
 ## Deployment
 
 Docker multi-stage build → GitHub Container Registry → SSH deploy via GitHub Actions.
-See `docker-compose.yml`, `.github/workflows/deploy.yml`, and `deploy.sh` for details.
+See `deploy/docker-compose.yml`, `.github/workflows/deploy.yml`, and `scripts/deploy/setup-server.sh` for details.

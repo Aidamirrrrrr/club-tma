@@ -1,8 +1,8 @@
 "use client";
 
-import { useTelegram } from "@/components/telegram";
 import { Card } from "@/components/ui/card";
 import { PageLoader } from "@/components/ui/spinner";
+import { useTelegram } from "@/integrations/telegram";
 
 /** Страница «Программа лояльности». */
 export default function LoyaltyPage() {

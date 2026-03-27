@@ -1,62 +1,24 @@
 "use client";
 
-import {
-  CalendarDays,
-  Copy,
-  Edit,
-  MapPin,
-  Share2,
-  Star,
-  Trash2,
-  UserCheck,
-  Users,
-  UserX,
-} from "lucide-react";
+import { Copy, Edit, Share2, Trash2, UserCheck, UserX } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import { useTelegram } from "@/components/telegram";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useParams } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { PageLoader } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/toast";
 import {
-  formatDate,
-  getInitials,
-  statusLabels,
-  statusVariants,
-} from "@/lib/utils";
-
-interface Participant {
-  id: number;
-  firstName: string;
-  lastName: string;
-  username: string;
-  photoUrl: string;
-}
-
-interface EventDetail {
-  id: number;
-  title: string;
-  description: string;
-  date: string;
-  time: string;
-  location: string;
-  coverUrl: string | null;
-  maxParticipants: number | null;
-  status: string;
-  createdBy: number | null;
-  participants: Participant[];
-  participantCount: number;
-}
+  EventDetailsSummary,
+  EventParticipantsList,
+  useEventDetail,
+} from "@/features/events";
+import { useTelegram } from "@/integrations/telegram";
+import { statusLabels, statusVariants } from "@/lib/utils";
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
   const { toast } = useToast();
   const {
     dbUser,
@@ -64,109 +26,24 @@ export default function EventDetailPage() {
     isLoading: authLoading,
     authHeaders,
   } = useTelegram();
-  const [event, setEvent] = useState<EventDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  const isRegistered = event?.participants?.some((p) => p.id === dbUser?.id);
-
-  const loadEvent = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/events/${id}`, { headers: authHeaders() });
-      if (res.ok) setEvent(await res.json());
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, [id, authHeaders]);
-
-  useEffect(() => {
-    if (authLoading) return;
-    if (!dbUser) {
-      setLoading(false);
-      return;
-    }
-    loadEvent();
-  }, [loadEvent, authLoading, dbUser]);
-
-  const handleRegister = async () => {
-    if (!dbUser || !event) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch(`/api/events/${event.id}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-      });
-      if (res.ok) {
-        toast("Вы зарегистрированы!", "success");
-        await loadEvent();
-      } else {
-        const data = await res.json();
-        toast(data.error || "Ошибка регистрации", "error");
-      }
-    } catch (e) {
-      console.error(e);
-      toast("Ошибка сети", "error");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleUnregister = async () => {
-    if (!dbUser || !event) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch(`/api/events/${event.id}/register`, {
-        method: "DELETE",
-        headers: authHeaders(),
-      });
-      if (res.ok) {
-        toast("Регистрация отменена", "info");
-        await loadEvent();
-      } else {
-        const data = await res.json();
-        toast(data.error || "Ошибка", "error");
-      }
-    } catch (e) {
-      console.error(e);
-      toast("Ошибка сети", "error");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!event || actionLoading) return;
-    setActionLoading(true);
-    try {
-      const res = await fetch(`/api/events/${event.id}`, {
-        method: "DELETE",
-        headers: authHeaders(),
-      });
-      if (res.ok) {
-        toast("Мероприятие удалено", "success");
-        router.push("/events");
-      } else {
-        toast("Ошибка удаления", "error");
-      }
-    } catch (e) {
-      console.error(e);
-      toast("Ошибка сети", "error");
-    } finally {
-      setShowDeleteConfirm(false);
-      setActionLoading(false);
-    }
-  };
-
-  const handleShare = () => {
-    if (!event) return;
-    const text = `${event.title}\n${formatDate(event.date)}${event.time ? `, ${event.time}` : ""}\n${event.location || ""}`;
-    if (navigator.share) {
-      navigator.share({ title: event.title, text }).catch(() => {});
-    }
-  };
+  const {
+    event,
+    loading,
+    actionLoading,
+    showDeleteConfirm,
+    setShowDeleteConfirm,
+    isRegistered,
+    handleRegister,
+    handleUnregister,
+    handleDelete,
+    handleShare,
+  } = useEventDetail({
+    eventId: id,
+    userId: dbUser?.id,
+    enabled: !authLoading && !!dbUser,
+    authHeaders,
+    toast,
+  });
 
   if (authLoading || loading) return <PageLoader />;
   if (!event)
@@ -204,46 +81,7 @@ export default function EventDetailPage() {
 
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:items-start">
           <div className="flex flex-col gap-5">
-            <Card className="animate-slide-up stagger-1 flex flex-col gap-3">
-              <span className="flex items-center gap-3 text-sm">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                  <CalendarDays className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <span className="text-muted-foreground">
-                  {formatDate(event.date, "d MMMM yyyy")}
-                  {event.time && `, ${event.time}`}
-                </span>
-              </span>
-              {event.location && (
-                <span className="flex items-center gap-3 text-sm">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                    <MapPin className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                  <span className="text-muted-foreground">
-                    {event.location}
-                  </span>
-                </span>
-              )}
-              <span className="flex items-center gap-3 text-sm">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                  <Users className="h-4 w-4 text-primary-foreground" />
-                </div>
-                <span className="text-muted-foreground">
-                  {event.participantCount} участник(ов)
-                  {event.maxParticipants
-                    ? ` / ${event.maxParticipants} мест`
-                    : ""}
-                </span>
-              </span>
-            </Card>
-
-            {event.description && (
-              <Card className="animate-slide-up stagger-2">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                  {event.description}
-                </p>
-              </Card>
-            )}
+            <EventDetailsSummary event={event} />
 
             <div className="animate-slide-up stagger-3 flex gap-2">
               {event.status === "open" &&
@@ -296,70 +134,7 @@ export default function EventDetailPage() {
               </div>
             )}
           </div>
-
-          <section className="animate-slide-up stagger-5">
-            <h2 className="mb-3 text-base font-semibold tracking-tight">
-              Участники ({event.participantCount})
-            </h2>
-            {event.participants.length === 0 ? (
-              <p className="animate-fade-in text-sm text-muted-foreground">
-                Пока никто не зарегистрировался
-              </p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {event.participants.map((p, index) => {
-                  const isOrganizer = p.id === event.createdBy;
-                  return (
-                    <Link key={p.id} href={`/members/${p.id}`}>
-                      <Card
-                        className={`card-interactive animate-slide-in-right flex items-center gap-3 p-3${isOrganizer ? " ring-1 ring-primary/30" : ""}`}
-                        style={{ animationDelay: `${0.05 * (index + 1)}s` }}
-                      >
-                        <div className="relative">
-                          <Avatar size="sm">
-                            {p.photoUrl && (
-                              <AvatarImage
-                                src={p.photoUrl}
-                                alt={`${p.firstName} ${p.lastName}`}
-                              />
-                            )}
-                            <AvatarFallback>
-                              {getInitials(p.firstName, p.lastName)}
-                            </AvatarFallback>
-                          </Avatar>
-                          {isOrganizer && (
-                            <span className="absolute -right-0.5 -bottom-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-card">
-                              <Star className="h-2.5 w-2.5 fill-current" />
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium">
-                              {p.firstName} {p.lastName}
-                            </p>
-                            {isOrganizer && (
-                              <Badge
-                                variant="success"
-                                className="text-[10px] px-1.5 py-0"
-                              >
-                                Организатор
-                              </Badge>
-                            )}
-                          </div>
-                          {p.username && (
-                            <p className="text-[11px] text-muted-foreground">
-                              @{p.username}
-                            </p>
-                          )}
-                        </div>
-                      </Card>
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+          <EventParticipantsList event={event} />
         </div>
       </div>
 

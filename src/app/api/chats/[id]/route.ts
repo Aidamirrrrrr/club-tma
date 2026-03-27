@@ -1,13 +1,14 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { chats } from "@/db/schema";
-import { requireAdmin } from "@/lib/telegram";
+import { isRateLimited } from "@/lib/rate-limit";
+import { sanitizeRequiredText, sanitizeText } from "@/lib/sanitize";
+import { parseId } from "@/lib/validation-rules";
+import { requireAdmin } from "@/server/auth/telegram";
 import {
-  isRateLimited,
-  sanitizeRequiredText,
-  sanitizeText,
-} from "@/lib/validation";
+  deleteChatById,
+  type UpdateChatInput,
+  updateChatById,
+} from "@/server/queries/chats";
+import { serializeChat } from "@/server/serializers/chats";
 
 /** PATCH /api/chats/[id] — обновить чат (админ). */
 export async function PATCH(
@@ -23,13 +24,13 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const numId = Number(id);
+    const numId = parseId(id);
     if (!Number.isFinite(numId) || numId < 1) {
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
     const body = await request.json();
-    const updates: Record<string, unknown> = {};
+    const updates: UpdateChatInput = {};
 
     if (body.title !== undefined) {
       const title = sanitizeRequiredText(body.title, 200);
@@ -66,17 +67,13 @@ export async function PATCH(
       return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
 
-    const [updated] = await db
-      .update(chats)
-      .set(updates)
-      .where(eq(chats.id, numId))
-      .returning();
+    const updated = await updateChatById(numId, updates);
 
     if (!updated) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.json(updated);
+    return NextResponse.json(serializeChat(updated));
   } catch (e) {
     console.error("PATCH /api/chats/[id] error:", e);
     return NextResponse.json(
@@ -100,15 +97,12 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const numId = Number(id);
+    const numId = parseId(id);
     if (!Number.isFinite(numId) || numId < 1) {
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
-    const [deleted] = await db
-      .delete(chats)
-      .where(eq(chats.id, numId))
-      .returning();
+    const deleted = await deleteChatById(numId);
 
     if (!deleted) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

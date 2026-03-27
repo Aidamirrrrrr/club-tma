@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ─────────────────────────────────────────────────────────────────────
 # Скрипт первоначальной настройки сервера для деплоя.
-# Запускается один раз на VPS: ./deploy.sh
+# Запускается один раз на VPS: ./scripts/deploy/setup-server.sh
 # После этого деплой идёт автоматически через GitHub Actions.
 # ─────────────────────────────────────────────────────────────────────
 
@@ -12,6 +12,12 @@ ok()    { printf '\033[1;32m✓ %s\033[0m\n' "$*"; }
 err()   { printf '\033[1;31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 
 APP_DIR="$HOME/club"
+DEPLOY_DIR="$APP_DIR/deploy"
+INIT_SSL_SCRIPT="$APP_DIR/scripts/deploy/init-letsencrypt.sh"
+
+compose() {
+  docker compose -p club --env-file "$APP_DIR/.env" -f "$DEPLOY_DIR/docker-compose.yml" "$@"
+}
 
 # ─── 1. Docker ────────────────────────────────────────────────────────
 if ! command -v docker &>/dev/null; then
@@ -81,27 +87,26 @@ if [ ! -f "$KEY_FILE" ]; then
 fi
 
 # ─── 5. Пробный запуск ───────────────────────────────────────────────
-if [ -f docker-compose.yml ]; then
+if [ -f "$DEPLOY_DIR/docker-compose.yml" ]; then
   info "Запускаем контейнеры..."
-  docker compose up -d db app
+  compose up -d db app
   ok "Приложение запущено."
 
-  # HTTPS: если сертификата ещё нет — получаем
   if [ ! -d "/etc/letsencrypt/live/${DOMAIN:-}" ]; then
-    if [ -f init-letsencrypt.sh ]; then
+    if [ -f "$INIT_SSL_SCRIPT" ]; then
       info "Получаем SSL-сертификат..."
-      bash init-letsencrypt.sh "$DOMAIN" "$EMAIL"
+      bash "$INIT_SSL_SCRIPT" "$DOMAIN" "$EMAIL"
     else
-      info "Скопируйте init-letsencrypt.sh на сервер и запустите:"
-      echo "  ./init-letsencrypt.sh $DOMAIN $EMAIL"
+      info "Скопируйте scripts/deploy/init-letsencrypt.sh на сервер и запустите:"
+      echo "  ./scripts/deploy/init-letsencrypt.sh $DOMAIN $EMAIL"
     fi
   else
     info "SSL-сертификат найден, запускаем nginx..."
-    docker compose up -d
+    compose up -d
     ok "HTTPS: https://$DOMAIN"
   fi
 else
-  info "Скопируйте docker-compose.yml и nginx.conf в $APP_DIR или дождитесь первого деплоя через GitHub Actions."
+  info "Скопируйте deploy/docker-compose.yml и deploy/nginx.conf в $APP_DIR или дождитесь первого деплоя через GitHub Actions."
 fi
 
 echo ""

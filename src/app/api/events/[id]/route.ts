@@ -1,21 +1,31 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { events } from "@/db/schema";
-import { notifyEventStatusChange } from "@/lib/notifications";
-import { requireAdmin, requireAuth } from "@/lib/telegram";
+import { EVENT_STATUSES } from "@/constants/domain";
+import { isRateLimited } from "@/lib/rate-limit";
 import {
-  EVENT_STATUSES,
+  sanitizeRequiredText,
+  sanitizeText,
+  sanitizeUrl,
+} from "@/lib/sanitize";
+import {
   isOneOf,
-  isRateLimited,
   isValidDate,
   isValidTime,
   parseId,
   parseIntClamped,
-  sanitizeRequiredText,
-  sanitizeText,
-  sanitizeUrl,
-} from "@/lib/validation";
+} from "@/lib/validation-rules";
+import { requireAdmin, requireAuth } from "@/server/auth/telegram";
+import { notifyEventStatusChange } from "@/server/notifications/telegram";
+import {
+  deleteEventById,
+  getEventById,
+  getEventWithParticipants,
+  type UpdateEventInput,
+  updateEventById,
+} from "@/server/queries/events";
+import {
+  serializeEventDetail,
+  serializeEventMutation,
+} from "@/server/serializers/events";
 
 /** GET /api/events/:id — детали мероприятия с участниками. */
 export async function GET(
@@ -36,36 +46,13 @@ export async function GET(
       return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
     }
 
-    const event = await db.query.events.findFirst({
-      where: eq(events.id, eventId),
-      with: {
-        registrations: {
-          with: {
-            user: true,
-          },
-        },
-      },
-    });
+    const event = await getEventWithParticipants(eventId);
 
     if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    const participants = event.registrations.map((r) => ({
-      id: r.user.id,
-      firstName: r.user.firstName,
-      lastName: r.user.lastName,
-      username: r.user.username,
-      photoUrl: r.user.photoUrl,
-      registeredAt: r.createdAt,
-    }));
-
-    const { registrations: _, ...eventData } = event;
-    return NextResponse.json({
-      ...eventData,
-      participants,
-      participantCount: participants.length,
-    });
+    return NextResponse.json(serializeEventDetail(event));
   } catch (error) {
     console.error("Event fetch error:", error);
     return NextResponse.json(
@@ -96,7 +83,7 @@ export async function PATCH(
 
     const body = await request.json();
 
-    const updates: Record<string, unknown> = {};
+    const updates: UpdateEventInput = {};
 
     if ("title" in body) {
       const title = sanitizeRequiredText(body.title, 200);
@@ -157,15 +144,9 @@ export async function PATCH(
       );
     }
 
-    const oldEvent = await db.query.events.findFirst({
-      where: eq(events.id, eventId),
-    });
+    const oldEvent = await getEventById(eventId);
 
-    const [updated] = await db
-      .update(events)
-      .set(updates)
-      .where(eq(events.id, eventId))
-      .returning();
+    const updated = await updateEventById(eventId, updates);
 
     if (!updated) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
@@ -175,7 +156,7 @@ export async function PATCH(
       notifyEventStatusChange(updated, updated.status).catch(console.error);
     }
 
-    return NextResponse.json(updated);
+    return NextResponse.json(serializeEventMutation(updated));
   } catch (error) {
     console.error("Event update error:", error);
     return NextResponse.json(
@@ -204,10 +185,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
     }
 
-    const [deleted] = await db
-      .delete(events)
-      .where(eq(events.id, eventId))
-      .returning();
+    const deleted = await deleteEventById(eventId);
 
     if (!deleted) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });

@@ -2,8 +2,8 @@ import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { events, registrations, users } from "@/db/schema";
-import { requireAuth } from "@/lib/telegram";
-import { isRateLimited } from "@/lib/validation";
+import { isRateLimited } from "@/lib/rate-limit";
+import { requireAuth } from "@/server/auth/telegram";
 
 /** GET /api/stats — общая статистика клуба. */
 export async function GET(request: Request) {

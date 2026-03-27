@@ -1,10 +1,12 @@
-import { and, count, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { events, registrations } from "@/db/schema";
-import { notifyRegistration } from "@/lib/notifications";
-import { requireAuth } from "@/lib/telegram";
-import { isRateLimited, parseId } from "@/lib/validation";
+import { isRateLimited } from "@/lib/rate-limit";
+import { parseId } from "@/lib/validation-rules";
+import { requireAuth } from "@/server/auth/telegram";
+import { notifyRegistration } from "@/server/notifications/telegram";
+import {
+  registerForEvent,
+  unregisterFromEvent,
+} from "@/server/services/event-registration";
 
 /** POST /api/events/:id/register — регистрация на мероприятие. */
 export async function POST(
@@ -25,63 +27,33 @@ export async function POST(
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    const userId = auth.user.id;
+    const result = await registerForEvent(auth.user.id, eventId);
 
-    const event = await db.query.events.findFirst({
-      where: eq(events.id, eventId),
-    });
-
-    if (!event) {
+    if (result.status === "not_found") {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }
 
-    if (event.status !== "open") {
+    if (result.status === "closed") {
       return NextResponse.json(
         { error: "Регистрация закрыта" },
         { status: 400 },
       );
     }
 
-    const reg = await db.transaction(async (tx) => {
-      const existing = await tx.query.registrations.findFirst({
-        where: and(
-          eq(registrations.userId, userId),
-          eq(registrations.eventId, eventId),
-        ),
-      });
-
-      if (existing) return "duplicate" as const;
-
-      if (event.maxParticipants && event.maxParticipants > 0) {
-        const [{ value: currentCount }] = await tx
-          .select({ value: count() })
-          .from(registrations)
-          .where(eq(registrations.eventId, eventId));
-
-        if (currentCount >= event.maxParticipants) return "full" as const;
-      }
-
-      const [inserted] = await tx
-        .insert(registrations)
-        .values({ userId, eventId })
-        .returning();
-      return inserted;
-    });
-
-    if (reg === "duplicate") {
+    if (result.status === "duplicate") {
       return NextResponse.json(
         { error: "Already registered" },
         { status: 409 },
       );
     }
 
-    if (reg === "full") {
+    if (result.status === "full") {
       return NextResponse.json({ error: "Все места заняты" }, { status: 400 });
     }
 
-    notifyRegistration(auth.user, event).catch(console.error);
+    notifyRegistration(auth.user, result.event).catch(console.error);
 
-    return NextResponse.json(reg, { status: 201 });
+    return NextResponse.json(result.registration, { status: 201 });
   } catch (error) {
     console.error("Registration error:", error);
     return NextResponse.json(
@@ -110,17 +82,9 @@ export async function DELETE(
       return NextResponse.json({ error: "Invalid event ID" }, { status: 400 });
     }
 
-    const [deleted] = await db
-      .delete(registrations)
-      .where(
-        and(
-          eq(registrations.userId, auth.user.id),
-          eq(registrations.eventId, eventId),
-        ),
-      )
-      .returning();
+    const result = await unregisterFromEvent(auth.user.id, eventId);
 
-    if (!deleted) {
+    if (result.status === "not_found") {
       return NextResponse.json(
         { error: "Registration not found" },
         { status: 404 },

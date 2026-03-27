@@ -3,8 +3,7 @@
 import { Camera, ImagePlus, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { useTelegram } from "@/components/telegram";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { FormField, FormTextarea } from "@/components/ui/form-field";
@@ -19,128 +18,34 @@ import {
 import { PageLoader } from "@/components/ui/spinner";
 import { TimePicker } from "@/components/ui/time-picker";
 import { useToast } from "@/components/ui/toast";
+import type { EventStatus } from "@/constants/domain";
+import { useEventForm } from "@/features/events";
+import { useTelegram } from "@/integrations/telegram";
 
 export default function EditEventPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { isAdmin, isLoading, authHeaders } = useTelegram();
   const { success, error: showError } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    date: "",
-    time: "",
-    location: "",
-    coverUrl: "",
-    maxParticipants: "",
-    status: "open",
+  const {
+    form,
+    setForm,
+    loading,
+    saving,
+    uploading,
+    handleChange,
+    handleCoverUpload,
+    handleSubmit,
+    resetCover,
+  } = useEventForm({
+    mode: "edit",
+    eventId: id,
+    enabled: !isLoading,
+    authHeaders,
+    toast: { success, error: showError },
+    onSuccess: (eventId) => router.push(`/events/${eventId}`),
   });
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const res = await fetch(`/api/events/${id}`, {
-          headers: authHeaders(),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setForm({
-            title: data.title || "",
-            description: data.description || "",
-            date: data.date || "",
-            time: data.time || "",
-            location: data.location || "",
-            coverUrl: data.coverUrl || "",
-            maxParticipants: data.maxParticipants
-              ? String(data.maxParticipants)
-              : "",
-            status: data.status || "open",
-          });
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    }
-    if (!isLoading) load();
-  }, [id, isLoading, authHeaders]);
-
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
-  ) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: authHeaders(),
-        body: formData,
-      });
-      if (res.ok) {
-        const { url } = await res.json();
-        setForm((prev) => ({ ...prev, coverUrl: url }));
-      } else {
-        showError("Не удалось загрузить обложку");
-      }
-    } catch (err) {
-      console.error(err);
-      showError("Ошибка загрузки файла");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (saving) return;
-    if (!form.title.trim()) {
-      showError("Введите название мероприятия");
-      return;
-    }
-    if (!form.date) {
-      showError("Выберите дату");
-      return;
-    }
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/events/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({
-          ...form,
-          maxParticipants: form.maxParticipants
-            ? Number(form.maxParticipants)
-            : 0,
-        }),
-      });
-      if (res.ok) {
-        success("Мероприятие сохранено");
-        router.push(`/events/${id}`);
-      } else {
-        const data = await res.json().catch(() => null);
-        showError(data?.error || "Не удалось сохранить");
-      }
-    } catch (e) {
-      console.error(e);
-      showError("Ошибка сети");
-    } finally {
-      setSaving(false);
-    }
-  };
 
   useEffect(() => {
     if (!isLoading && !isAdmin) router.push("/events");
@@ -234,7 +139,7 @@ export default function EditEventPage() {
                   type="button"
                   size="sm"
                   variant="secondary"
-                  onClick={() => setForm((prev) => ({ ...prev, coverUrl: "" }))}
+                  onClick={resetCover}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -274,7 +179,7 @@ export default function EditEventPage() {
           <Select
             value={form.status}
             onValueChange={(value) =>
-              setForm((prev) => ({ ...prev, status: value }))
+              setForm((prev) => ({ ...prev, status: value as EventStatus }))
             }
           >
             <SelectTrigger className="w-full">

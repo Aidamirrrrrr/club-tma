@@ -1,12 +1,9 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/telegram";
-import {
-  ALLOWED_IMAGE_TYPES,
-  detectImageType,
-  isRateLimited,
-} from "@/lib/validation";
+import { ALLOWED_IMAGE_TYPES, detectImageType } from "@/lib/file-validation";
+import { isRateLimited } from "@/lib/rate-limit";
+import { requireAuth } from "@/server/auth/telegram";
 
 /** Маппинг MIME-типов на расширения файлов. */
 const MIME_TO_EXT: Record<string, string> = {

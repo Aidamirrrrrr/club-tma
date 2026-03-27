@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { BottomNav } from "@/components/bottom-nav";
-import { DesktopSidebar } from "@/components/desktop-sidebar";
-import { MainContent } from "@/components/main-content";
-import { TelegramBackButtonManager, TelegramInit } from "@/components/telegram";
+import { BottomNav } from "@/components/layout/bottom-nav";
+import { DesktopSidebar } from "@/components/layout/desktop-sidebar";
+import { MainContent } from "@/components/layout/main-content";
 import { ToastProvider } from "@/components/ui/toast";
+import {
+  TelegramBackButtonManager,
+  TelegramInit,
+} from "@/integrations/telegram";
 
 const helveticaNeue = localFont({
   src: [

@@ -2,13 +2,9 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { parseInitDataUser, validateInitData } from "@/lib/telegram";
-import {
-  isRateLimited,
-  sanitizeHandle,
-  sanitizeText,
-  sanitizeUrl,
-} from "@/lib/validation";
+import { isRateLimited } from "@/lib/rate-limit";
+import { sanitizeHandle, sanitizeText, sanitizeUrl } from "@/lib/sanitize";
+import { parseInitDataUser, validateInitData } from "@/server/auth/telegram";
 
 /** POST /api/auth — авторизация/регистрация через Telegram initData. */
 export async function POST(request: Request) {

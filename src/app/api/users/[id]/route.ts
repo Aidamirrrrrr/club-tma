@@ -1,18 +1,23 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { requireAdmin, requireAuth } from "@/lib/telegram";
+import { USER_ROLES } from "@/constants/domain";
+import { isRateLimited } from "@/lib/rate-limit";
 import {
-  isOneOf,
-  isRateLimited,
-  parseId,
   sanitizeHandle,
   sanitizePhone,
   sanitizeText,
   sanitizeUrl,
-  USER_ROLES,
-} from "@/lib/validation";
+} from "@/lib/sanitize";
+import { isOneOf, parseId } from "@/lib/validation-rules";
+import { requireAdmin, requireAuth } from "@/server/auth/telegram";
+import {
+  getUserWithEvents,
+  type UpdateUserInput,
+  updateUserById,
+} from "@/server/queries/users";
+import {
+  serializeUserDetail,
+  serializeUserMutation,
+} from "@/server/serializers/users";
 
 /** GET /api/users/:id — профиль пользователя с историей мероприятий. */
 export async function GET(
@@ -33,31 +38,13 @@ export async function GET(
       return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
     }
 
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, userId),
-      with: {
-        registrations: {
-          with: {
-            event: true,
-          },
-        },
-      },
-    });
+    const user = await getUserWithEvents(userId);
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const userEvents = user.registrations.map((r) => ({
-      eventId: r.event.id,
-      eventTitle: r.event.title,
-      eventDate: r.event.date,
-      eventTime: r.event.time,
-      eventStatus: r.event.status,
-    }));
-
-    const { registrations: _, ...userData } = user;
-    return NextResponse.json({ ...userData, events: userEvents });
+    return NextResponse.json(serializeUserDetail(user));
   } catch (error) {
     console.error("User fetch error:", error);
     return NextResponse.json(
@@ -105,7 +92,7 @@ export async function PATCH(
       }
     }
 
-    const updates: Record<string, unknown> = {};
+    const updates: UpdateUserInput = {};
 
     if ("firstName" in body) {
       const v = sanitizeText(body.firstName, 100);
@@ -162,17 +149,13 @@ export async function PATCH(
       );
     }
 
-    const [updated] = await db
-      .update(users)
-      .set(updates)
-      .where(eq(users.id, targetId))
-      .returning();
+    const updated = await updateUserById(targetId, updates);
 
     if (!updated) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(updated);
+    return NextResponse.json(serializeUserMutation(updated));
   } catch (error) {
     console.error("User update error:", error);
     return NextResponse.json(

@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect } from "react";
-import { useTelegram } from "@/components/telegram";
+import { useTelegram } from "@/integrations/telegram";
 
 /** Обёртка основного контента с адаптивными отступами. */
 export function MainContent({ children }: { children: ReactNode }) {
@@ -11,21 +11,18 @@ export function MainContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
+    if (!pathname) return;
     window.scrollTo(0, 0);
   }, [pathname]);
 
-  // CSS-переменные от SDK (bindViewportCssVars) обновляются реактивно.
-  // JS-значения используются как фоллбэк, а CSS calc — как основной источник.
   const cssSafeTop =
     "calc(var(--tg-viewport-safe-area-inset-top, 0px) + var(--tg-viewport-content-safe-area-inset-top, 0px))";
   const cssSafeBottom =
     "calc(var(--tg-viewport-safe-area-inset-bottom, 0px) + var(--tg-viewport-content-safe-area-inset-bottom, 0px))";
 
-  // Используем JS-значения для проверки наличия отступов
   const hasTopInset = safeAreaTop > 0;
   const hasBottomInset = safeAreaBottom > 0;
 
-  // Страницы с собственным фоновым блоком — без верхнего отступа
   const noTopPadding =
     pathname === "/profile" ||
     pathname.startsWith("/members/") ||

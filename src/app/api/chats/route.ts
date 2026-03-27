@@ -1,13 +1,9 @@
-import { asc } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { chats } from "@/db/schema";
-import { requireAdmin, requireAuth } from "@/lib/telegram";
-import {
-  isRateLimited,
-  sanitizeRequiredText,
-  sanitizeText,
-} from "@/lib/validation";
+import { isRateLimited } from "@/lib/rate-limit";
+import { sanitizeRequiredText, sanitizeText } from "@/lib/sanitize";
+import { requireAdmin, requireAuth } from "@/server/auth/telegram";
+import { createChat, listChats } from "@/server/queries/chats";
+import { serializeChat } from "@/server/serializers/chats";
 
 /** GET /api/chats — список чатов и каналов. */
 export async function GET(request: Request) {
@@ -19,12 +15,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    const rows = await db
-      .select()
-      .from(chats)
-      .orderBy(asc(chats.sort), asc(chats.id));
+    const rows = await listChats();
 
-    return NextResponse.json(rows);
+    return NextResponse.json(rows.map(serializeChat));
   } catch (e) {
     console.error("GET /api/chats error:", e);
     return NextResponse.json(
@@ -66,12 +59,9 @@ export async function POST(request: Request) {
     const sort =
       typeof body.sort === "number" ? Math.max(0, Math.floor(body.sort)) : 0;
 
-    const [row] = await db
-      .insert(chats)
-      .values({ title, url, description, sort })
-      .returning();
+    const row = await createChat({ title, url, description, sort });
 
-    return NextResponse.json(row, { status: 201 });
+    return NextResponse.json(serializeChat(row), { status: 201 });
   } catch (e) {
     console.error("POST /api/chats error:", e);
     return NextResponse.json(

@@ -1,31 +1,28 @@
 "use client";
 
-import { ExternalLink, MessagesSquare, Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useTelegram } from "@/components/telegram";
+import { MessagesSquare } from "lucide-react";
+import { useState } from "react";
 import { EmptyState } from "@/components/ui/animated";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { Input } from "@/components/ui/input";
 import { PageLoader } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
-
-interface ChatItem {
-  id: number;
-  title: string;
-  url: string;
-  description: string;
-  sort: number;
-}
+import {
+  ChatCreateForm,
+  ChatListItem,
+  createChat,
+  deleteChat,
+  useChats,
+} from "@/features/chats";
+import { useTelegram } from "@/integrations/telegram";
 
 /** Страница «Чаты и каналы». */
 export default function ChatsPage() {
   const { isLoading, isAdmin, authHeaders } = useTelegram();
   const toast = useToast();
-  const [chatList, setChatList] = useState<ChatItem[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const { chatList, loading, appendChat, removeChat } = useChats({
+    enabled: !isLoading,
+    authHeaders,
+  });
 
   // Форма добавления
   const [showForm, setShowForm] = useState(false);
@@ -36,35 +33,25 @@ export default function ChatsPage() {
 
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (isLoading) return;
-    fetch("/api/chats", { headers: authHeaders() })
-      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-      .then(setChatList)
-      .catch((e) => console.error(e))
-      .finally(() => setLoadingData(false));
-  }, [isLoading, authHeaders]);
-
   async function handleAdd() {
     if (!title.trim() || !url.trim()) return;
     setSaving(true);
     try {
-      const res = await fetch("/api/chats", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...authHeaders() },
-        body: JSON.stringify({
+      const res = await createChat(
+        {
           title: title.trim(),
           url: url.trim(),
           description: description.trim(),
-        }),
-      });
+        },
+        authHeaders,
+      );
       if (!res.ok) {
         const data = await res.json();
         toast.error(data.error || "Ошибка");
         return;
       }
       const row = await res.json();
-      setChatList((prev) => [...prev, row]);
+      appendChat(row);
       setTitle("");
       setUrl("");
       setDescription("");
@@ -79,12 +66,9 @@ export default function ChatsPage() {
 
   async function handleDelete(id: number) {
     try {
-      const res = await fetch(`/api/chats/${id}`, {
-        method: "DELETE",
-        headers: authHeaders(),
-      });
+      const res = await deleteChat(id, authHeaders);
       if (res.ok) {
-        setChatList((prev) => prev.filter((c) => c.id !== id));
+        removeChat(id);
         toast.success("Чат удалён");
       }
     } catch {
@@ -100,7 +84,7 @@ export default function ChatsPage() {
         <h1 className="text-xl font-bold tracking-tight">Чаты и каналы</h1>
       </div>
 
-      {loadingData ? (
+      {loading ? (
         <Card className="p-6">
           <div className="flex items-center justify-center">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -113,50 +97,18 @@ export default function ChatsPage() {
       ) : (
         <div className="animate-slide-up stagger-1 flex flex-col gap-3">
           {chatList.map((chat) => (
-            <Card key={chat.id} className="flex items-center gap-3 p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary">
-                <MessagesSquare className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{chat.title}</p>
-                {chat.description && (
-                  <p className="text-xs text-muted-foreground truncate">
-                    {chat.description}
-                  </p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <a
-                  href={chat.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-muted transition-colors hover:bg-muted/80"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </a>
-                {isAdmin && (
-                  <>
-                    <ConfirmDialog
-                      open={deleteId === chat.id}
-                      title="Удалить чат?"
-                      description="Ссылка будет удалена для всех участников."
-                      onConfirm={() => {
-                        setDeleteId(null);
-                        handleDelete(chat.id);
-                      }}
-                      onCancel={() => setDeleteId(null)}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setDeleteId(chat.id)}
-                      className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </>
-                )}
-              </div>
-            </Card>
+            <ChatListItem
+              key={chat.id}
+              chat={chat}
+              isAdmin={isAdmin}
+              deleteOpen={deleteId === chat.id}
+              onDeleteOpen={() => setDeleteId(chat.id)}
+              onDeleteClose={() => setDeleteId(null)}
+              onDeleteConfirm={() => {
+                setDeleteId(null);
+                handleDelete(chat.id);
+              }}
+            />
           ))}
         </div>
       )}
@@ -164,60 +116,24 @@ export default function ChatsPage() {
       {/* Форма добавления — только для админов */}
       {isAdmin && (
         <section className="animate-slide-up stagger-2">
-          {showForm ? (
-            <Card className="flex flex-col gap-4 p-4">
-              <p className="text-sm font-semibold">Новый чат/канал</p>
-              <Input
-                placeholder="Название"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                maxLength={200}
-              />
-              <Input
-                placeholder="Ссылка (https://t.me/...)"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                maxLength={500}
-              />
-              <Textarea
-                placeholder="Описание (необязательно)"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                maxLength={500}
-                rows={2}
-              />
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={handleAdd}
-                  disabled={!title.trim() || !url.trim() || saving}
-                >
-                  {saving ? "Сохранение..." : "Добавить"}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowForm(false);
-                    setTitle("");
-                    setUrl("");
-                    setDescription("");
-                  }}
-                >
-                  Отмена
-                </Button>
-              </div>
-            </Card>
-          ) : (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setShowForm(true)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Добавить чат
-            </Button>
-          )}
+          <ChatCreateForm
+            showForm={showForm}
+            title={title}
+            url={url}
+            description={description}
+            saving={saving}
+            onTitleChange={setTitle}
+            onUrlChange={setUrl}
+            onDescriptionChange={setDescription}
+            onSubmit={handleAdd}
+            onOpen={() => setShowForm(true)}
+            onCancel={() => {
+              setShowForm(false);
+              setTitle("");
+              setUrl("");
+              setDescription("");
+            }}
+          />
         </section>
       )}
     </div>

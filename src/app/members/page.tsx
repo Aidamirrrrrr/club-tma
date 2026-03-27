@@ -1,49 +1,30 @@
 "use client";
 
-import { Search, Star, Users as UsersIcon } from "lucide-react";
+import { Search, Users as UsersIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { useTelegram } from "@/components/telegram";
+import { useState } from "react";
 import { EmptyState, MemberCardSkeleton } from "@/components/ui/animated";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PageLoader } from "@/components/ui/spinner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { User } from "@/db/schema";
-import { useDebounce } from "@/lib/hooks";
-import { getInitials } from "@/lib/utils";
+import { MemberListItem, useMembersList } from "@/features/members";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useTelegram } from "@/integrations/telegram";
 
 /** Страница списка участников клуба. */
 export default function MembersPage() {
   const { isLoading, isAdmin, authHeaders } = useTelegram();
   const router = useRouter();
-  const [members, setMembers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
   const [filter, setFilter] = useState<"all" | "admins" | "blocked">("all");
-  const [loadingData, setLoadingData] = useState(true);
-
-  useEffect(() => {
-    if (isLoading) return;
-    const controller = new AbortController();
-    setLoadingData(true);
-    const params = new URLSearchParams();
-    if (debouncedSearch) params.set("search", debouncedSearch);
-    if (filter === "admins") params.set("role", "admin");
-    if (filter === "blocked") params.set("blocked", "true");
-    fetch(`/api/users?${params.toString()}`, {
-      headers: authHeaders(),
-      signal: controller.signal,
-    })
-      .then((res) => (res.ok ? res.json() : Promise.reject(res)))
-      .then(setMembers)
-      .catch((e) => {
-        if (e.name !== "AbortError") console.error(e);
-      })
-      .finally(() => setLoadingData(false));
-    return () => controller.abort();
-  }, [debouncedSearch, filter, isLoading, authHeaders]);
+  const { members, loading } = useMembersList({
+    search: debouncedSearch,
+    filter,
+    enabled: !isLoading,
+    authHeaders,
+  });
 
   if (isLoading) return <PageLoader />;
 
@@ -78,7 +59,7 @@ export default function MembersPage() {
         </TabsList>
       </Tabs>
 
-      {loadingData ? (
+      {loading ? (
         <div className="flex flex-col gap-2">
           <MemberCardSkeleton />
           <MemberCardSkeleton />
@@ -93,64 +74,15 @@ export default function MembersPage() {
       ) : (
         <div className="flex flex-col gap-2">
           {members.map((member, index) => (
-            <div
+            <MemberListItem
               key={member.id}
-              role="button"
-              tabIndex={0}
+              member={member}
               onClick={() => router.push(`/members/${member.id}`)}
               onKeyDown={(e) =>
                 e.key === "Enter" && router.push(`/members/${member.id}`)
               }
-              className={`card-interactive animate-slide-up stagger-${Math.min(index + 1, 10)} flex cursor-pointer items-center gap-3 rounded-2xl border bg-card p-3 shadow-[0_2px_8px_0_rgb(0_0_0/0.06)]`}
-            >
-              <div className="relative shrink-0">
-                <Avatar>
-                  {member.photoUrl && (
-                    <AvatarImage
-                      src={member.photoUrl}
-                      alt={`${member.firstName} ${member.lastName}`}
-                    />
-                  )}
-                  <AvatarFallback>
-                    {getInitials(member.firstName, member.lastName || "")}
-                  </AvatarFallback>
-                </Avatar>
-                {member.role === "admin" && (
-                  <span className="absolute -right-0.5 -bottom-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-primary-foreground ring-2 ring-card">
-                    <Star className="h-2.5 w-2.5 fill-current" />
-                  </span>
-                )}
-              </div>
-              <div className="min-w-0 flex-1 overflow-hidden">
-                <p className="truncate text-sm font-semibold">
-                  {member.firstName} {member.lastName}
-                </p>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  {member.bio ||
-                    [
-                      member.telegram &&
-                        (member.telegram.startsWith("@")
-                          ? member.telegram
-                          : `@${member.telegram}`),
-                      member.instagram && member.instagram,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ") ||
-                    "Участник"}
-                </p>
-              </div>
-              <svg
-                className="h-4 w-4 shrink-0 text-muted-foreground/40"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m9 18 6-6-6-6" />
-              </svg>
-            </div>
+              className={`animate-slide-up stagger-${Math.min(index + 1, 10)}`}
+            />
           ))}
         </div>
       )}

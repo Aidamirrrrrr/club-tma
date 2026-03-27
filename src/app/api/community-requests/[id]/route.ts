@@ -1,9 +1,12 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { communityRequests } from "@/db/schema";
-import { requireAdmin } from "@/lib/telegram";
-import { isOneOf, isRateLimited } from "@/lib/validation";
+import { isRateLimited } from "@/lib/rate-limit";
+import { isOneOf, parseId } from "@/lib/validation-rules";
+import { requireAdmin } from "@/server/auth/telegram";
+import {
+  deleteCommunityRequestById,
+  updateCommunityRequestStatus,
+} from "@/server/queries/community-requests";
+import { serializeCommunityRequestMutation } from "@/server/serializers/community-requests";
 
 const ALLOWED_STATUSES = ["pending", "reviewed"] as const;
 
@@ -23,7 +26,7 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const numId = Number(id);
+    const numId = parseId(id);
     if (!Number.isFinite(numId) || numId < 1) {
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
@@ -33,17 +36,13 @@ export async function PATCH(
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
 
-    const [updated] = await db
-      .update(communityRequests)
-      .set({ status: body.status })
-      .where(eq(communityRequests.id, numId))
-      .returning();
+    const updated = await updateCommunityRequestStatus(numId, body.status);
 
     if (!updated) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    return NextResponse.json(updated);
+    return NextResponse.json(serializeCommunityRequestMutation(updated));
   } catch (e) {
     console.error("PATCH /api/community-requests/[id] error:", e);
     return NextResponse.json(
@@ -69,15 +68,12 @@ export async function DELETE(
     }
 
     const { id } = await params;
-    const numId = Number(id);
+    const numId = parseId(id);
     if (!Number.isFinite(numId) || numId < 1) {
       return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
     }
 
-    const [deleted] = await db
-      .delete(communityRequests)
-      .where(eq(communityRequests.id, numId))
-      .returning();
+    const deleted = await deleteCommunityRequestById(numId);
 
     if (!deleted) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

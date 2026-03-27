@@ -1,16 +1,9 @@
 "use client";
 
-import { CalendarDays, Home, UserCircle, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTelegram } from "@/components/telegram";
-
-const navItems = [
-  { href: "/", label: "Главная", icon: Home },
-  { href: "/events", label: "События", icon: CalendarDays },
-  { href: "/members", label: "Участники", icon: Users },
-  { href: "/profile", label: "Профиль", icon: UserCircle },
-];
+import { navigationItems } from "@/constants/navigation";
+import { useTelegram } from "@/integrations/telegram";
 
 /** Нижняя навигация для мобильных устройств. */
 export function BottomNav() {
@@ -28,7 +21,7 @@ export function BottomNav() {
       }}
     >
       <div className="mx-auto flex max-w-lg items-center justify-around">
-        {navItems.map((item) => {
+        {navigationItems.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(item.href));
@@ -61,7 +54,7 @@ export function BottomNav() {
                   isActive ? "font-semibold" : ""
                 }`}
               >
-                {item.label}
+                {item.mobileLabel ?? item.label}
               </span>
             </Link>
           );

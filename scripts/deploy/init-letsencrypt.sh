@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ─────────────────────────────────────────────────────────────────────
 # Первичное получение SSL-сертификата Let's Encrypt.
-# Запустите один раз: ./init-letsencrypt.sh example.com admin@example.com
+# Запустите один раз: ./scripts/deploy/init-letsencrypt.sh example.com admin@example.com
 # ─────────────────────────────────────────────────────────────────────
 
 DOMAIN="${1:-}"
@@ -19,16 +19,18 @@ info()  { printf '\033[1;34m→ %s\033[0m\n' "$*"; }
 ok()    { printf '\033[1;32m✓ %s\033[0m\n' "$*"; }
 
 APP_DIR="$HOME/club"
-cd "$APP_DIR"
+DEPLOY_DIR="$APP_DIR/deploy"
+cd "$DEPLOY_DIR"
 
-# 1. Подставим домен в nginx.conf
+compose() {
+  docker compose -p club --env-file "$APP_DIR/.env" -f "$DEPLOY_DIR/docker-compose.yml" "$@"
+}
+
 info "Настраиваем nginx для домена $DOMAIN..."
 sed -i "s/DOMAIN/$DOMAIN/g" nginx.conf
 sed -i "s/server_name _;/server_name $DOMAIN;/g" nginx.conf
 
-# 2. Временно закомментируем SSL-блок, чтобы nginx стартовал без сертификата
 info "Запускаем nginx для ACME challenge..."
-# Создадим временный конфиг только с HTTP
 cat > nginx-temp.conf <<'NGINX'
 worker_processes auto;
 events { worker_connections 1024; }
@@ -42,19 +44,22 @@ http {
 }
 NGINX
 
-# Запустим nginx с временным конфигом
-docker compose run -d --name nginx-temp \
+docker run -d --name nginx-temp \
   -v "$(pwd)/nginx-temp.conf:/etc/nginx/nginx.conf:ro" \
   -v "club_certbot-www:/var/www/certbot" \
   -p 80:80 \
   nginx:alpine || {
-    # Если контейнер уже есть — перезапустим через compose
-    docker compose up -d nginx
+    docker stop nginx-temp 2>/dev/null || true
+    docker rm nginx-temp 2>/dev/null || true
+    docker run -d --name nginx-temp \
+      -v "$(pwd)/nginx-temp.conf:/etc/nginx/nginx.conf:ro" \
+      -v "club_certbot-www:/var/www/certbot" \
+      -p 80:80 \
+      nginx:alpine
   }
 
-# 3. Получаем сертификат
 info "Запрашиваем сертификат Let's Encrypt для $DOMAIN..."
-docker compose run --rm certbot certonly \
+compose run --rm certbot certonly \
   --webroot \
   --webroot-path=/var/www/certbot \
   --email "$EMAIL" \
@@ -62,13 +67,11 @@ docker compose run --rm certbot certonly \
   --no-eff-email \
   -d "$DOMAIN"
 
-# 4. Убираем временный контейнер
 docker stop nginx-temp 2>/dev/null && docker rm nginx-temp 2>/dev/null || true
 rm -f nginx-temp.conf
 
-# 5. Запускаем всё с настоящим конфигом
 info "Перезапускаем с SSL..."
-docker compose up -d
+compose up -d
 
 ok "HTTPS настроен! https://$DOMAIN"
 echo ""

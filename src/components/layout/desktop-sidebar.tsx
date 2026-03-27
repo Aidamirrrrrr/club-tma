@@ -1,23 +1,16 @@
 "use client";
 
-import { CalendarDays, Home, UserCircle, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const navItems = [
-  { href: "/", label: "Главная", icon: Home },
-  { href: "/events", label: "Мероприятия", icon: CalendarDays },
-  { href: "/members", label: "Участники", icon: Users },
-  { href: "/profile", label: "Профиль", icon: UserCircle },
-];
+import { navigationItems } from "@/constants/navigation";
 
 /** Боковое меню для десктопа. */
 export function DesktopSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:border-r lg:border-border bg-card">
+    <aside className="hidden bg-card lg:flex lg:w-64 lg:shrink-0 lg:flex-col lg:border-r lg:border-border">
       <div className="flex h-full flex-col gap-2 px-4 py-6">
         <div className="mb-6 flex items-center gap-3 px-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-sm">
@@ -30,7 +23,7 @@ export function DesktopSidebar() {
         </div>
 
         <nav className="flex flex-col gap-1">
-          {navItems.map((item) => {
+          {navigationItems.map((item) => {
             const isActive =
               pathname === item.href ||
               (item.href !== "/" && pathname.startsWith(item.href));

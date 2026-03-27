@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import type { EventStatus } from "@/constants/domain";
 import { db } from "@/db";
 import type { Event, User } from "@/db/schema";
 import { registrations, users } from "@/db/schema";
@@ -52,8 +53,8 @@ export async function notifyNewEvent(event: Event) {
 
   await Promise.allSettled(
     admins
-      .filter((a) => a.telegramId)
-      .map((a) => sendTelegramMessage(a.telegramId, msg)),
+      .filter((admin) => admin.telegramId)
+      .map((admin) => sendTelegramMessage(admin.telegramId, msg)),
   );
 }
 
@@ -69,7 +70,10 @@ export async function notifyRegistration(user: User, event: Event) {
 }
 
 /** Уведомляет зарегистрированных пользователей об изменении статуса мероприятия. */
-export async function notifyEventStatusChange(event: Event, newStatus: string) {
+export async function notifyEventStatusChange(
+  event: Event,
+  newStatus: EventStatus,
+) {
   const regs = await db.query.registrations.findMany({
     where: eq(registrations.eventId, event.id),
     with: { user: true },
@@ -91,7 +95,9 @@ export async function notifyEventStatusChange(event: Event, newStatus: string) {
 
   await Promise.allSettled(
     regs
-      .filter((r) => r.user?.telegramId)
-      .map((r) => sendTelegramMessage(r.user?.telegramId, msg)),
+      .filter((registration) => registration.user?.telegramId)
+      .map((registration) =>
+        sendTelegramMessage(registration.user?.telegramId, msg),
+      ),
   );
 }

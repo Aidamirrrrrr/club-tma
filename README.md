@@ -187,7 +187,7 @@ src/
 cp .env.example .env
 
 # Запуск
-docker compose up -d
+docker compose -p club --env-file .env -f deploy/docker-compose.yml up -d
 ```
 
 ### GitHub Actions (автодеплой)
@@ -195,7 +195,7 @@ docker compose up -d
 При пуше в `main` автоматически:
 
 1. Собирается Docker-образ → пушится в GitHub Container Registry
-2. По SSH копируется `docker-compose.yml` на сервер
+2. По SSH копируются файлы из `deploy/` и `scripts/deploy/` на сервер
 3. Выполняется `docker compose pull` + `up -d` + миграции
 
 #### Настройка секретов
@@ -224,7 +224,7 @@ mkdir -p ~/club && cd ~/club
 # Создать .env с переменными POSTGRES_PASSWORD, BOT_TOKEN и т.д.
 ```
 
-Или использовать готовый скрипт `deploy.sh` для автоматической настройки.
+Или использовать готовый скрипт `scripts/deploy/setup-server.sh` для автоматической настройки.
 
 ## Безопасность
 

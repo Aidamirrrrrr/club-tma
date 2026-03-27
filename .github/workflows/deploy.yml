@@ -54,7 +54,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          source: "docker-compose.yml,nginx.conf,init-letsencrypt.sh"
+          source: "deploy/docker-compose.yml,deploy/nginx.conf,scripts/deploy/init-letsencrypt.sh"
           target: ~/club
 
       - name: Deploy via SSH
@@ -67,6 +67,8 @@ jobs:
           script: |
             cd ~/club
 
+            COMPOSE="docker compose -p club --env-file .env -f deploy/docker-compose.yml"
+
             # Login to GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
@@ -77,24 +79,24 @@ jobs:
             DOMAIN="${{ secrets.DOMAIN }}"
             EMAIL="${{ secrets.EMAIL }}"
             if [ -n "$DOMAIN" ]; then
-              sed -i "s/DOMAIN/$DOMAIN/g" nginx.conf
-              sed -i "s/server_name _;/server_name $DOMAIN;/g" nginx.conf
+              sed -i "s/DOMAIN/$DOMAIN/g" deploy/nginx.conf
+              sed -i "s/server_name _;/server_name $DOMAIN;/g" deploy/nginx.conf
             fi
 
             # Pull new image and restart
-            docker compose pull app
-            docker compose up -d
+            $COMPOSE pull app
+            $COMPOSE up -d
 
             # Init SSL if certificate doesn't exist yet
             if [ -n "$DOMAIN" ] && [ -n "$EMAIL" ]; then
-              if ! docker compose exec -T nginx test -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem 2>/dev/null; then
-                chmod +x init-letsencrypt.sh
-                bash init-letsencrypt.sh "$DOMAIN" "$EMAIL"
+              if ! $COMPOSE exec -T nginx test -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem 2>/dev/null; then
+                chmod +x scripts/deploy/init-letsencrypt.sh
+                bash scripts/deploy/init-letsencrypt.sh "$DOMAIN" "$EMAIL"
               fi
             fi
 
             # Run migrations
-            docker compose exec -T app \
+            $COMPOSE exec -T app \
               node -e "require('child_process').execSync('npx drizzle-kit push', { stdio: 'inherit' })"
 
             # Cleanup old images
