@@ -68,6 +68,7 @@ jobs:
             set -euo pipefail
 
             cd ~/club
+            mkdir -p deploy scripts/deploy
             export PATH="/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/snap/bin:$PATH"
 
             resolve_docker() {
@@ -100,6 +101,21 @@ jobs:
             if [ -z "$DOCKER" ]; then
               echo "Docker не найден на сервере. Сначала выполните scripts/deploy/setup-server.sh или установите Docker вручную." >&2
               exit 127
+            fi
+
+            # Write runtime environment file from GitHub secrets
+            cat > .env <<EOF
+            POSTGRES_USER=${{ secrets.POSTGRES_USER || 'club' }}
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            POSTGRES_DB=${{ secrets.POSTGRES_DB || 'club' }}
+            BOT_TOKEN=${{ secrets.BOT_TOKEN }}
+            DOMAIN=${{ secrets.DOMAIN }}
+            EMAIL=${{ secrets.EMAIL }}
+            EOF
+
+            if [ -z "${{ secrets.POSTGRES_PASSWORD }}" ] || [ -z "${{ secrets.BOT_TOKEN }}" ]; then
+              echo "POSTGRES_PASSWORD и BOT_TOKEN должны быть заданы в GitHub Secrets." >&2
+              exit 1
             fi
 
             COMPOSE="$DOCKER compose -p club --env-file .env -f deploy/docker-compose.yml"
