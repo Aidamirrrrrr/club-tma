@@ -87,6 +87,14 @@ export async function POST(request: Request) {
       );
     }
 
+    const coverUrl = sanitizeUrl(body.coverUrl);
+    if (!coverUrl) {
+      return NextResponse.json(
+        { error: "Cover image is required" },
+        { status: 400 },
+      );
+    }
+
     const status =
       body.status && isOneOf(body.status, EVENT_STATUSES)
         ? body.status
@@ -98,7 +106,7 @@ export async function POST(request: Request) {
       date: body.date,
       time: body.time || "",
       location: sanitizeText(body.location, 500) || "",
-      coverUrl: sanitizeUrl(body.coverUrl),
+      coverUrl,
       maxParticipants: parseIntClamped(body.maxParticipants, 0, 10000, 0),
       status,
       createdBy: auth.user.id,

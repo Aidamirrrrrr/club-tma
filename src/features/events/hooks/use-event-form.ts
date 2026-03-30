@@ -164,6 +164,11 @@ export function useEventForm({
       return;
     }
 
+    if (!form.coverUrl) {
+      toast.error("Загрузите обложку мероприятия");
+      return;
+    }
+
     if (!form.date) {
       toast.error("Выберите дату");
       return;
