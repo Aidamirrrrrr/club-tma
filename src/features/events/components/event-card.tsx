@@ -31,6 +31,7 @@ export function EventCard({
             width={800}
             height={400}
             className="h-48 w-full object-cover"
+            unoptimized
           />
         )}
         <div className="flex flex-1 flex-col gap-2.5 px-4 pb-4 pt-2">

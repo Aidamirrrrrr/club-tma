@@ -65,6 +65,7 @@ export default function EventDetailPage() {
             width={800}
             height={400}
             className="h-72 w-full rounded-b-3xl object-cover shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]"
+            unoptimized
           />
         </div>
       )}
