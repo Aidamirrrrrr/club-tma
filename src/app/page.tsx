@@ -77,7 +77,7 @@ export default function HomePage() {
           <Card className="card-interactive flex w-full flex-col overflow-hidden p-0">
             <div className="relative h-32 bg-primary/5">
               <Image
-                src="/tower.png"
+                src="/мероприятия.png"
                 alt="Мероприятия"
                 fill
                 className="object-cover"
@@ -102,7 +102,7 @@ export default function HomePage() {
           <Card className="card-interactive flex w-full flex-col overflow-hidden p-0">
             <div className="relative h-32 bg-primary/5">
               <Image
-                src="/decor-1.png"
+                src="/запрос.png"
                 alt="Запрос в сообщество"
                 fill
                 className="object-cover"
@@ -125,7 +125,7 @@ export default function HomePage() {
           <Card className="card-interactive flex w-full flex-col overflow-hidden p-0">
             <div className="relative h-32 bg-primary/5">
               <Image
-                src="/decor-2.png"
+                src="/Участники.png"
                 alt="Участники"
                 fill
                 className="object-cover"
@@ -146,7 +146,7 @@ export default function HomePage() {
           <Card className="card-interactive flex w-full flex-col overflow-hidden p-0">
             <div className="relative h-32 bg-primary/5">
               <Image
-                src="/decor-3.png"
+                src="/Чаты и каналы.png"
                 alt="Чаты и каналы"
                 fill
                 className="object-cover"
