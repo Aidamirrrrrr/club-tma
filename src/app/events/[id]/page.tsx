@@ -54,11 +54,9 @@ export default function EventDetailPage() {
     );
 
   return (
-    <div
-      className={`flex flex-col gap-5 pb-6${event.coverUrl ? "" : " px-4 pt-8"}`}
-    >
-      {event.coverUrl && (
-        <div className="animate-scale-in">
+    <div className="flex flex-col gap-5 pb-6">
+      <div className="animate-scale-in">
+        {event.coverUrl ? (
           <Image
             src={event.coverUrl}
             alt={event.title}
@@ -67,10 +65,12 @@ export default function EventDetailPage() {
             className="h-72 w-full rounded-b-3xl object-cover shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]"
             unoptimized
           />
-        </div>
-      )}
+        ) : (
+          <div className="h-48 w-full rounded-b-3xl bg-linear-to-br from-primary/80 via-primary/40 to-background shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]" />
+        )}
+      </div>
 
-      <div className={`flex flex-col gap-5${event.coverUrl ? " px-4" : ""}`}>
+      <div className="flex flex-col gap-5 px-4">
         <div className="animate-fade-in flex items-start justify-between gap-2">
           <h1 className="text-xl font-bold tracking-tight lg:text-2xl">
             {event.title}

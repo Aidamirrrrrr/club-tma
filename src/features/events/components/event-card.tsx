@@ -20,40 +20,43 @@ export function EventCard({
   linkClassName,
 }: EventCardProps) {
   return (
-    <Link href={href} className={linkClassName}>
+    <Link
+      href={href}
+      className={`w-full${linkClassName ? ` ${linkClassName}` : ""}`}
+    >
       <Card
-        className={`card-interactive flex h-full flex-col gap-2.5 overflow-hidden p-0${className ? ` ${className}` : ""}`}
+        className={`card-interactive flex h-full w-full flex-col gap-2.5 overflow-hidden p-0${className ? ` ${className}` : ""}`}
       >
-        {event.coverUrl && (
-          <Image
-            src={event.coverUrl}
-            alt={event.title}
-            width={800}
-            height={400}
-            className="h-48 w-full object-cover"
-            unoptimized
-          />
-        )}
+        <div className="relative">
+          {event.coverUrl ? (
+            <Image
+              src={event.coverUrl}
+              alt={event.title}
+              width={800}
+              height={400}
+              className="h-48 w-full object-cover"
+              unoptimized
+            />
+          ) : (
+            <div className="h-32 w-full bg-linear-to-br from-primary/80 via-primary/40 to-background" />
+          )}
+          <Badge
+            variant={statusVariants[event.status]}
+            className="absolute top-2.5 right-2.5"
+          >
+            {statusLabels[event.status] || event.status}
+          </Badge>
+        </div>
         <div className="flex flex-1 flex-col gap-2.5 px-4 pb-4 pt-2">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold leading-tight tracking-tight">
               {event.title}
             </h3>
-            <Badge variant={statusVariants[event.status]}>
-              {statusLabels[event.status] || event.status}
-            </Badge>
           </div>
           <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
             {event.description}
           </p>
           <div className="mt-auto flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
-                <CalendarDays className="h-3 w-3 text-primary-foreground" />
-              </span>
-              {formatDate(event.date)}
-              {event.time && `, ${event.time}`}
-            </span>
             {event.location && (
               <span className="flex items-center gap-1.5">
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
@@ -62,6 +65,13 @@ export function EventCard({
                 {event.location}
               </span>
             )}
+            <span className="flex items-center gap-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                <CalendarDays className="h-3 w-3 text-primary-foreground" />
+              </span>
+              {formatDate(event.date)}
+              {event.time && `, ${event.time}`}
+            </span>
             <span className="flex items-center gap-1.5">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary">
                 <Users className="h-3 w-3 text-primary-foreground" />
