@@ -37,6 +37,7 @@ model User {
     phone           String?  @default("")
     profileGradient String?  @default("default") @map("profile_gradient")
     role            UserRole @default(user)
+    isTeam          Boolean  @default(false) @map("is_team")
     blocked         Boolean  @default(false)
     createdAt       DateTime @default(now()) @map("created_at")
 
