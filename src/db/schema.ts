@@ -2,15 +2,15 @@
  * Реэкспорт Prisma-типов для обратной совместимости импортов.
  */
 export type {
-  User,
+  Chat,
+  CommunityRequest,
   Event,
   Registration,
-  CommunityRequest,
-  Chat,
+  User,
 } from "@/generated/prisma/client";
 
 export {
-  UserRole,
-  EventStatus,
   CommunityRequestStatus,
+  EventStatus,
+  UserRole,
 } from "@/generated/prisma/client";

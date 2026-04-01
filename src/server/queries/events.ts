@@ -1,7 +1,7 @@
-import { Prisma } from "@/generated/prisma/client";
 import type { EventStatus } from "@/constants/domain";
 import { db } from "@/db";
 import type { Event } from "@/db/schema";
+import { Prisma } from "@/generated/prisma/client";
 
 interface ListEventsParams {
   filter: "upcoming" | "past" | "mine";

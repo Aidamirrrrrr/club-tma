@@ -87,13 +87,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const coverUrl = sanitizeUrl(body.coverUrl);
-    if (!coverUrl) {
-      return NextResponse.json(
-        { error: "Cover image is required" },
-        { status: 400 },
-      );
-    }
+    const coverUrl = sanitizeUrl(body.coverUrl) || undefined;
 
     const status =
       body.status && isOneOf(body.status, EVENT_STATUSES)

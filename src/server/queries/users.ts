@@ -1,7 +1,7 @@
-import { Prisma } from "@/generated/prisma/client";
 import type { UserRole } from "@/constants/domain";
 import { db } from "@/db";
 import type { User } from "@/db/schema";
+import { Prisma } from "@/generated/prisma/client";
 
 interface ListUsersParams {
   search: string;

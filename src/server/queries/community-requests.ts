@@ -1,6 +1,6 @@
-import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/db";
 import type { CommunityRequest } from "@/db/schema";
+import { Prisma } from "@/generated/prisma/client";
 
 type CommunityRequestStatus = "pending" | "reviewed";
 

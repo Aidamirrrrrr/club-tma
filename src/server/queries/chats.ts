@@ -1,6 +1,6 @@
-import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/db";
 import type { Chat } from "@/db/schema";
+import { Prisma } from "@/generated/prisma/client";
 
 export interface UpdateChatInput {
   title?: string;
