@@ -20,6 +20,7 @@ export function serializeUserListItem(
     telegram: user.telegram || "",
     phone: user.phone || "",
     role: user.role,
+    isTeam: user.isTeam,
     profileGradient: user.profileGradient || "default",
     createdAt: user.createdAt.toISOString(),
   };
@@ -37,6 +38,7 @@ export function serializeUserDetail(user: UserDetailDto): UserDetailResponse {
     telegram: user.telegram || "",
     phone: user.phone || "",
     role: user.role,
+    isTeam: user.isTeam,
     profileGradient: user.profileGradient || "default",
     createdAt: user.createdAt.toISOString(),
     telegramId: user.telegramId,
@@ -63,6 +65,7 @@ export function serializeUserMutation(user: User): UserMutationResponse {
     telegram: user.telegram || "",
     phone: user.phone || "",
     role: user.role,
+    isTeam: user.isTeam,
     profileGradient: user.profileGradient || "default",
     createdAt: user.createdAt.toISOString(),
     telegramId: user.telegramId,

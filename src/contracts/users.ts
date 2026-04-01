@@ -11,6 +11,7 @@ export interface UserListItemResponse {
   telegram: string;
   phone: string;
   role: UserRole;
+  isTeam: boolean;
   profileGradient: string;
   createdAt: string;
 }

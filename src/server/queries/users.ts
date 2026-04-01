@@ -19,6 +19,7 @@ export interface UpdateUserInput {
   photoUrl?: string;
   profileGradient?: string;
   role?: UserRole;
+  isTeam?: boolean;
   blocked?: boolean;
 }
 
@@ -33,6 +34,7 @@ export interface UserListItem {
   telegram: string | null;
   phone: string | null;
   role: UserRole;
+  isTeam: boolean;
   profileGradient: string | null;
   createdAt: Date;
 }
@@ -83,6 +85,7 @@ export async function listUsers({
       telegram: true,
       phone: true,
       role: true,
+      isTeam: true,
       profileGradient: true,
       createdAt: true,
     },

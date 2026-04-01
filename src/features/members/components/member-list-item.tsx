@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import type { MemberListItemData } from "@/features/members/types";
 import { getInitials } from "@/lib/utils";
 
@@ -59,6 +60,11 @@ export function MemberListItem({
               .join(" · ") ||
             "Участник"}
         </p>
+        {member.isTeam && (
+          <Badge variant="default" className="mt-1 text-[10px] py-0 px-1.5 h-4">
+            D1 Команда
+          </Badge>
+        )}
       </div>
       <svg
         className="h-4 w-4 shrink-0 text-muted-foreground/40"

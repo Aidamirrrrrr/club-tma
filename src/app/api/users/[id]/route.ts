@@ -72,7 +72,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    const hasAdminFields = "role" in body || "blocked" in body;
+    const hasAdminFields = "role" in body || "blocked" in body || "isTeam" in body;
 
     if (hasAdminFields) {
       const auth = await requireAdmin(request);
@@ -140,6 +140,15 @@ export async function PATCH(
         );
       }
       updates.blocked = body.blocked;
+    }
+    if ("isTeam" in body && hasAdminFields) {
+      if (typeof body.isTeam !== "boolean") {
+        return NextResponse.json(
+          { error: "isTeam must be a boolean" },
+          { status: 400 },
+        );
+      }
+      updates.isTeam = body.isTeam;
     }
 
     if (Object.keys(updates).length === 0) {

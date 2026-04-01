@@ -101,11 +101,39 @@ export function useMemberDetail({
     }
   }
 
+  async function toggleTeam() {
+    if (!member || actionLoading) return;
+
+    setActionLoading(true);
+    try {
+      const response = await updateMember(
+        member.id,
+        { isTeam: !member.isTeam },
+        authHeaders,
+      );
+      if (!response.ok) {
+        toast.error("Не удалось изменить статус команды");
+        return;
+      }
+
+      toast.success(
+        member.isTeam ? "Убран из D1 Команды" : "Добавлен в D1 Команду",
+      );
+      await loadMember();
+    } catch (error) {
+      console.error(error);
+      toast.error("Не удалось изменить статус команды");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   return {
     member,
     loading,
     actionLoading,
     toggleRole,
     toggleBlock,
+    toggleTeam,
   };
 }

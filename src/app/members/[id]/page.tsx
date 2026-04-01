@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, CheckCircle, Shield, ShieldOff, Star } from "lucide-react";
+import { Ban, CheckCircle, Shield, ShieldOff, Star, Users } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -21,15 +21,22 @@ export default function MemberDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { isAdmin, isLoading: authLoading, authHeaders } = useTelegram();
   const [showRoleConfirm, setShowRoleConfirm] = useState(false);
+  const [showTeamConfirm, setShowTeamConfirm] = useState(false);
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
   const toast = useToast();
-  const { member, loading, actionLoading, toggleRole, toggleBlock } =
-    useMemberDetail({
-      memberId: id,
-      enabled: !authLoading,
-      authHeaders,
-      toast,
-    });
+  const {
+    member,
+    loading,
+    actionLoading,
+    toggleRole,
+    toggleBlock,
+    toggleTeam,
+  } = useMemberDetail({
+    memberId: id,
+    enabled: !authLoading,
+    authHeaders,
+    toast,
+  });
 
   if (authLoading || loading) return <PageLoader />;
   if (!member)
@@ -100,6 +107,15 @@ export default function MemberDetailPage() {
                   Организатор
                 </Badge>
               )}
+              {member.isTeam && (
+                <Badge
+                  key="badge-team"
+                  variant="default"
+                  className="animate-bounce-in"
+                >
+                  D1 Команда
+                </Badge>
+              )}
               {member.blocked && (
                 <Badge variant="danger" className="animate-bounce-in">
                   Заблокирован
@@ -117,6 +133,22 @@ export default function MemberDetailPage() {
 
             {isAdmin && (
               <div className="animate-slide-up stagger-3 flex flex-col gap-2">
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => setShowTeamConfirm(true)}
+                  disabled={actionLoading}
+                >
+                  {member.isTeam ? (
+                    <>
+                      <Users className="h-4 w-4" /> Убрать из D1 Команды
+                    </>
+                  ) : (
+                    <>
+                      <Users className="h-4 w-4" /> Добавить в D1 Команду
+                    </>
+                  )}
+                </Button>
                 <Button
                   variant="secondary"
                   className="w-full"
@@ -149,6 +181,25 @@ export default function MemberDetailPage() {
                     </>
                   )}
                 </Button>
+                <ConfirmDialog
+                  open={showTeamConfirm}
+                  title={
+                    member.isTeam
+                      ? "Убрать из D1 Команды"
+                      : "Добавить в D1 Команду"
+                  }
+                  description={
+                    member.isTeam
+                      ? `Убрать ${member.firstName} из D1 Команды?`
+                      : `Добавить ${member.firstName} в D1 Команду?`
+                  }
+                  confirmLabel="Подтвердить"
+                  onConfirm={async () => {
+                    await toggleTeam();
+                    setShowTeamConfirm(false);
+                  }}
+                  onCancel={() => setShowTeamConfirm(false)}
+                />
                 <ConfirmDialog
                   open={showRoleConfirm}
                   title={
