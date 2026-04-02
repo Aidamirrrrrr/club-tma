@@ -43,9 +43,7 @@ export function BottomNav() {
               >
                 <Icon
                   className={`h-5 w-5 transition-all duration-300 ease-out ${
-                    isActive
-                      ? "text-primary-foreground"
-                      : "group-active:scale-90"
+                    isActive ? "text-black" : "group-active:scale-90"
                   }`}
                 />
               </div>
