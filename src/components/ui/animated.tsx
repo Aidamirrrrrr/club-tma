@@ -97,7 +97,7 @@ export function Skeleton({
 
 export function CardSkeleton({ lines = 3 }: { lines?: number }) {
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]">
+    <div className="rounded-2xl border bg-card p-4 shadow-[0_2px_8px_0_rgb(0_0_0/0.08),0_1px_3px_-1px_rgb(0_0_0/0.06),inset_0_1px_0_0_rgb(255_255_255/0.35),inset_0_0_0_1px_rgb(255_255_255/0.08)]">
       <div className="flex flex-col gap-3">
         <Skeleton className="h-5 w-3/4" />
         {Array.from({ length: lines - 1 }).map((_, i) => (
@@ -115,7 +115,7 @@ export function CardSkeleton({ lines = 3 }: { lines?: number }) {
 /** Скелетон карточки статистики. */
 export function StatCardSkeleton() {
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]">
+    <div className="rounded-2xl border bg-card p-4 shadow-[0_2px_8px_0_rgb(0_0_0/0.08),0_1px_3px_-1px_rgb(0_0_0/0.06),inset_0_1px_0_0_rgb(255_255_255/0.35),inset_0_0_0_1px_rgb(255_255_255/0.08)]">
       <Skeleton className="mb-2 h-5 w-5 rounded-lg" />
       <Skeleton className="mb-1.5 h-7 w-16" />
       <Skeleton className="h-3 w-20" />
@@ -126,7 +126,7 @@ export function StatCardSkeleton() {
 /** Скелетон карточки участника. */
 export function MemberCardSkeleton() {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]">
+    <div className="flex items-center gap-3 rounded-2xl border bg-card p-3 shadow-[0_2px_8px_0_rgb(0_0_0/0.08),0_1px_3px_-1px_rgb(0_0_0/0.06),inset_0_1px_0_0_rgb(255_255_255/0.35),inset_0_0_0_1px_rgb(255_255_255/0.08)]">
       <Skeleton className="h-10 w-10 shrink-0 rounded-full" />
       <div className="flex-1">
         <Skeleton className="mb-1.5 h-4 w-32" />
@@ -139,7 +139,7 @@ export function MemberCardSkeleton() {
 /** Скелетон карточки мероприятия. */
 export function EventCardSkeleton() {
   return (
-    <div className="flex flex-col gap-2.5 rounded-2xl border bg-card p-4 shadow-[0_2px_8px_0_rgb(0_0_0/0.06),0_1px_3px_-1px_rgb(0_0_0/0.04)]">
+    <div className="flex flex-col gap-2.5 rounded-2xl border bg-card p-4 shadow-[0_2px_8px_0_rgb(0_0_0/0.08),0_1px_3px_-1px_rgb(0_0_0/0.06),inset_0_1px_0_0_rgb(255_255_255/0.35),inset_0_0_0_1px_rgb(255_255_255/0.08)]">
       <div className="flex items-start justify-between">
         <Skeleton className="h-5 w-40" />
         <Skeleton className="h-5 w-16 rounded-full" />

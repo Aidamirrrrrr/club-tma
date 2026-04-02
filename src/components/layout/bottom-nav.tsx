@@ -12,7 +12,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up bg-background/80 shadow-[0_-2px_12px_0_rgb(0_0_0/0.06)] backdrop-blur-xl lg:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up bg-background/80 shadow-[0_-2px_12px_0_rgb(0_0_0/0.08),inset_0_1px_0_0_rgb(255_255_255/0.35)] backdrop-blur-xl lg:hidden"
       style={{
         paddingBottom:
           safeAreaBottom > 0

@@ -23,7 +23,7 @@ export function MemberListItem({
       tabIndex={0}
       onClick={onClick}
       onKeyDown={onKeyDown}
-      className={`card-interactive flex cursor-pointer items-center gap-3 rounded-2xl border bg-card p-3 shadow-[0_2px_8px_0_rgb(0_0_0/0.06)]${className ? ` ${className}` : ""}`}
+      className={`card-interactive flex cursor-pointer items-center gap-3 rounded-2xl border bg-card p-3 shadow-[0_2px_8px_0_rgb(0_0_0/0.08),inset_0_1px_0_0_rgb(255_255_255/0.35),inset_0_0_0_1px_rgb(255_255_255/0.08)]${className ? ` ${className}` : ""}`}
     >
       <div className="relative shrink-0">
         <Avatar>

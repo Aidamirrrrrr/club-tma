@@ -37,7 +37,7 @@ export function ConfirmDialog({
         onKeyDown={(e) => e.key === "Escape" && onCancel()}
       />
 
-      <div className="animate-scale-in relative mx-4 w-full max-w-sm rounded-2xl bg-card p-5 shadow-xl">
+      <div className="animate-scale-in relative mx-4 w-full max-w-sm rounded-2xl bg-card p-5 shadow-xl shadow-[0_4px_16px_0_rgb(0_0_0/0.15),inset_0_1px_0_0_rgb(255_255_255/0.35),inset_0_0_0_1px_rgb(255_255_255/0.08)]">
         <h3 className="text-base font-semibold">{title}</h3>
         {description && (
           <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>
