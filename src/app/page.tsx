@@ -54,7 +54,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col gap-4 px-4 pb-6 lg:gap-5">
-      <section className="animate-fade-in flex gap-3 rounded-2xl bg-muted/50 p-4 shadow-[inset_0_1px_0_0_rgb(255_255_255/0.35),inset_0_0_0_1px_rgb(255_255_255/0.08)] lg:gap-4 lg:p-5">
+      <section className="animate-fade-in flex gap-3 rounded-2xl bg-muted/50 p-3 shadow-[inset_0_1px_0_0_rgb(255_255_255/0.35),inset_0_0_0_1px_rgb(255_255_255/0.08)] lg:gap-4 lg:p-5">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary shadow-sm">
           <Image src="/logo.png" alt="Клуб" width={24} height={24} />
         </div>
@@ -91,7 +91,7 @@ export default function HomePage() {
 
       <Link
         href="/community-request"
-        className="animate-fade-in flex items-center justify-between rounded-2xl bg-primary p-4 text-black transition-colors hover:bg-primary/90"
+        className="animate-fade-in flex items-center justify-between rounded-2xl bg-primary p-3 lg:p-4 text-black transition-colors hover:bg-primary/90"
       >
         <div>
           <p className="text-base font-bold tracking-tight lg:text-xl">
@@ -108,7 +108,7 @@ export default function HomePage() {
         href="/events"
         className="animate-fade-in relative flex h-36 overflow-hidden rounded-2xl bg-card shadow-[0_2px_8px_0_rgb(0_0_0/0.08),inset_0_1px_0_0_rgb(255_255_255/0.35),inset_0_0_0_1px_rgb(255_255_255/0.08)]"
       >
-        <div className="flex flex-col justify-end p-4">
+        <div className="flex flex-col justify-end p-3 lg:p-4">
           <p className="text-base font-bold tracking-tight lg:text-xl">
             Мероприятия
           </p>
@@ -129,7 +129,7 @@ export default function HomePage() {
 
       <section className="animate-slide-up stagger-5 grid grid-cols-2 gap-3">
         <Link href="/chats" className="flex">
-          <Card className="card-interactive flex w-full items-center justify-between p-4">
+          <Card className="card-interactive flex w-full items-center justify-between gap-3 p-3 lg:p-4">
             <div>
               <p className="text-sm font-bold tracking-tight lg:text-xl">
                 Чаты и каналы
@@ -144,7 +144,7 @@ export default function HomePage() {
           </Card>
         </Link>
         <Link href="/members" className="flex">
-          <Card className="card-interactive flex w-full items-center justify-between p-4">
+          <Card className="card-interactive flex w-full items-center justify-between gap-3 p-3 lg:p-4">
             <div>
               <p className="text-sm font-bold tracking-tight lg:text-xl">
                 Участники
@@ -159,7 +159,7 @@ export default function HomePage() {
           </Card>
         </Link>
         <Link href="/loyalty" className="col-span-2 flex">
-          <Card className="card-interactive flex w-full items-center justify-between p-4">
+          <Card className="card-interactive flex w-full items-center justify-between gap-3 p-3 lg:p-4">
             <div>
               <p className="text-base font-bold tracking-tight lg:text-xl">
                 Программа лояльности

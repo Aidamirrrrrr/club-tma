@@ -30,7 +30,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`relative flex flex-1 flex-col items-center gap-1.5 py-3 text-[10px] font-medium transition-all duration-200 ${
+              className={`relative flex flex-1 flex-col items-center gap-2.5 py-3 text-[10px] font-medium transition-all duration-200 ${
                 isActive
                   ? "text-foreground"
                   : "text-muted-foreground active:scale-90"
