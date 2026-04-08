@@ -120,7 +120,7 @@ export default function HomePage() {
           </div>
           <div className="relative h-32 w-16 overflow-hidden rounded-xl">
             <Image
-              src="/ZOOM Итоги месяца.png"
+              src="/zoom.png"
               alt=""
               fill
               className="object-cover"
@@ -128,7 +128,7 @@ export default function HomePage() {
           </div>
           <div className="relative hidden h-32 w-16 overflow-hidden rounded-xl min-[385px]:block">
             <Image
-              src="/Женские практики.png"
+              src="/women.png"
               alt=""
               fill
               className="object-cover"
