@@ -116,7 +116,7 @@ export default function HomePage() {
         </div>
         <div className="ml-auto flex items-center gap-2 py-2 pr-2">
           <div className="relative h-32 w-16 overflow-hidden rounded-xl">
-            <Image src="/zoom.png" alt="" fill className="object-cover" />
+            <Image src="/ai_agents.png" alt="" fill className="object-cover" />
           </div>
           <div className="relative h-32 w-16 overflow-hidden rounded-xl">
             <Image src="/padel.png" alt="" fill className="object-cover" />
