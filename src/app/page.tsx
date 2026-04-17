@@ -122,7 +122,7 @@ export default function HomePage() {
             <Image src="/padel.png" alt="" fill className="object-cover" />
           </div>
           <div className="relative hidden h-32 w-16 overflow-hidden rounded-xl min-[385px]:block">
-            <Image src="/women.png" alt="" fill className="object-cover" />
+            <Image src="/biz_breakfast.png" alt="" fill className="object-cover" />
           </div>
         </div>
       </Link>
