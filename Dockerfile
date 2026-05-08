@@ -5,7 +5,7 @@ FROM base AS deps
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN npm install -g pnpm@9.15.9 && pnpm install --frozen-lockfile
+RUN npm install -g pnpm@9.15.9 && pnpm install --no-frozen-lockfile
 
 # --- Build ---
 FROM base AS builder
