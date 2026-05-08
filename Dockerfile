@@ -5,7 +5,7 @@ FROM base AS deps
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN corepack enable pnpm && pnpm install --frozen-lockfile
+RUN npm install -g pnpm@9.15.9 && pnpm install --frozen-lockfile
 
 # --- Build ---
 FROM base AS builder
@@ -15,7 +15,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generate Prisma client and build
-RUN corepack enable pnpm && npx prisma generate && pnpm build
+RUN npm install -g pnpm@9.15.9 && npx prisma generate && pnpm build
 
 # --- Production ---
 FROM base AS runner
