@@ -116,13 +116,13 @@ export default function HomePage() {
         </div>
         <div className="ml-auto flex items-center gap-2 py-2 pr-2">
           <div className="relative h-32 w-16 overflow-hidden rounded-xl">
-            <Image src="/biz_breakfast.png" alt="" fill className="object-cover" />
+            <Image src="/prozarka.png" alt="" fill className="object-cover" />
           </div>
           <div className="relative h-32 w-16 overflow-hidden rounded-xl">
-            <Image src="/banya.png" alt="" fill className="object-cover" />
+            <Image src="/biz_breakfast.png" alt="" fill className="object-cover" />
           </div>
           <div className="relative hidden h-32 w-16 overflow-hidden rounded-xl min-[385px]:block">
-            <Image src="/soon.png" alt="" fill className="object-cover" />
+            <Image src="/banya.png" alt="" fill className="object-cover" />
           </div>
         </div>
       </Link>
