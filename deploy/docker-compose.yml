@@ -25,6 +25,7 @@ services:
       TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET}
       APP_URL: ${APP_URL}
       DOMAIN: ${DOMAIN}
+      NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY}
       NODE_ENV: production
     volumes:
       - uploads:/app/public/uploads

@@ -4,6 +4,7 @@ import "./globals.css";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { DesktopSidebar } from "@/components/layout/desktop-sidebar";
 import { MainContent } from "@/components/layout/main-content";
+import { StaleDeployReload } from "@/components/stale-deploy-reload";
 import { ToastProvider } from "@/components/ui/toast";
 import {
   TelegramBackButtonManager,
@@ -49,6 +50,7 @@ export default function RootLayout({
     <html lang="ru">
       <body className={`${helveticaNeue.variable} antialiased`}>
         <TelegramInit />
+        <StaleDeployReload />
         <ToastProvider>
           <TelegramGate>
             <TelegramBackButtonManager />

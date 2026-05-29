@@ -44,6 +44,8 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
 
   deploy:
     needs: build-and-push
@@ -144,6 +146,7 @@ jobs:
             APP_URL=$APP_URL_VALUE
             DOMAIN=${{ secrets.DOMAIN }}
             EMAIL=${{ secrets.EMAIL }}
+            NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
             EOF
 
             if [ -z "${{ secrets.POSTGRES_PASSWORD }}" ] || [ -z "${{ secrets.BOT_TOKEN }}" ]; then

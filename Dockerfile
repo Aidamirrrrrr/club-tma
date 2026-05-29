@@ -14,6 +14,11 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Stable Server Actions encryption key — должен быть одинаковым для всех билдов,
+# иначе клиенты со старым бандлом получают "Failed to find Server Action" после деплоя.
+ARG NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+ENV NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=$NEXT_SERVER_ACTIONS_ENCRYPTION_KEY
+
 # Generate Prisma client and build
 RUN npm install -g pnpm@9.15.9 && npx prisma generate && pnpm build
 
