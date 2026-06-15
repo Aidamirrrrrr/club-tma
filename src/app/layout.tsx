@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { BottomNav } from "@/components/layout/bottom-nav";
-import { DesktopSidebar } from "@/components/layout/desktop-sidebar";
-import { MainContent } from "@/components/layout/main-content";
+import { AppChrome } from "@/components/layout/app-chrome";
 import { StaleDeployReload } from "@/components/stale-deploy-reload";
 import { ToastProvider } from "@/components/ui/toast";
-import {
-  TelegramBackButtonManager,
-  TelegramGate,
-  TelegramInit,
-} from "@/integrations/telegram";
 
 const helveticaNeue = localFont({
   src: [
@@ -49,19 +42,9 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body className={`${helveticaNeue.variable} antialiased`}>
-        <TelegramInit />
         <StaleDeployReload />
         <ToastProvider>
-          <TelegramGate>
-            <TelegramBackButtonManager />
-            <div className="flex min-h-screen lg:h-screen lg:overflow-hidden">
-              <DesktopSidebar />
-              <div className="min-w-0 flex-1 overflow-x-hidden lg:overflow-y-auto">
-                <MainContent>{children}</MainContent>
-              </div>
-            </div>
-            <BottomNav />
-          </TelegramGate>
+          <AppChrome>{children}</AppChrome>
         </ToastProvider>
       </body>
     </html>

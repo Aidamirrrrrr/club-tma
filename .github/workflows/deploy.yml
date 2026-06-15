@@ -80,9 +80,17 @@ jobs:
 
             EXISTING_WEBHOOK_SECRET=""
             EXISTING_APP_URL=""
+            EXISTING_PHOTOS_PASSWORD=""
             if [ -f .env ]; then
               EXISTING_WEBHOOK_SECRET=$(grep '^TELEGRAM_WEBHOOK_SECRET=' .env | cut -d= -f2- || true)
               EXISTING_APP_URL=$(grep '^APP_URL=' .env | cut -d= -f2- || true)
+              EXISTING_PHOTOS_PASSWORD=$(grep '^PHOTOS_ADMIN_PASSWORD=' .env | cut -d= -f2- || true)
+            fi
+
+            if [ -n "${{ secrets.PHOTOS_ADMIN_PASSWORD }}" ]; then
+              PHOTOS_ADMIN_PASSWORD_VALUE="${{ secrets.PHOTOS_ADMIN_PASSWORD }}"
+            else
+              PHOTOS_ADMIN_PASSWORD_VALUE="$EXISTING_PHOTOS_PASSWORD"
             fi
 
             if [ -n "${{ secrets.TELEGRAM_WEBHOOK_SECRET }}" ]; then
@@ -147,6 +155,7 @@ jobs:
             DOMAIN=${{ secrets.DOMAIN }}
             EMAIL=${{ secrets.EMAIL }}
             NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
+            PHOTOS_ADMIN_PASSWORD=$PHOTOS_ADMIN_PASSWORD_VALUE
             EOF
 
             if [ -z "${{ secrets.POSTGRES_PASSWORD }}" ] || [ -z "${{ secrets.BOT_TOKEN }}" ]; then

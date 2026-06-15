@@ -24,6 +24,20 @@ export default function HomePage() {
   const { dbUser, isLoading, authHeaders } = useTelegram();
   const [events, setEvents] = useState<EventPreview[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [eventPhotos, setEventPhotos] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/site-images")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data?.images) return;
+        const urls = data.images
+          .map((img: { url: string | null }) => img.url)
+          .filter((u: string | null): u is string => Boolean(u));
+        setEventPhotos(urls);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (isLoading) return;
@@ -115,15 +129,16 @@ export default function HomePage() {
           <p className="text-[11px] text-muted-foreground lg:text-xs">клуба</p>
         </div>
         <div className="ml-auto flex items-center gap-2 py-2 pr-2">
-          <div className="relative h-32 w-16 overflow-hidden rounded-xl">
-            <Image src="/networking_brunch.png" alt="" fill className="object-cover" />
-          </div>
-          <div className="relative h-32 w-16 overflow-hidden rounded-xl">
-            <Image src="/kava_no_ringu.png" alt="" fill className="object-cover" />
-          </div>
-          <div className="relative hidden h-32 w-16 overflow-hidden rounded-xl min-[385px]:block">
-            <Image src="/portfolio_rebalance.png" alt="" fill className="object-cover" />
-          </div>
+          {eventPhotos.map((src, i) => (
+            <div
+              key={src}
+              className={`relative h-32 w-16 overflow-hidden rounded-xl${
+                i === 2 ? " hidden min-[385px]:block" : ""
+              }`}
+            >
+              <Image src={src} alt="" fill className="object-cover" />
+            </div>
+          ))}
         </div>
       </Link>
 

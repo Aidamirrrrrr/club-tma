@@ -92,6 +92,15 @@ model CommunityRequest {
     @@map("community_requests")
 }
 
+model SiteImage {
+    id        Int      @id @default(autoincrement())
+    slot      Int      @unique
+    url       String?
+    updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+    @@map("site_images")
+}
+
 model Chat {
     id          Int      @id @default(autoincrement())
     title       String
