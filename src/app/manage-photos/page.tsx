@@ -145,6 +145,7 @@ export default function ManagePhotosPage() {
                     alt={`Слот ${slot}`}
                     fill
                     sizes="200px"
+                    unoptimized
                     className="object-cover"
                   />
                 ) : (

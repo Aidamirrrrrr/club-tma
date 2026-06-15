@@ -136,7 +136,7 @@ export default function HomePage() {
                 i === 2 ? " hidden min-[385px]:block" : ""
               }`}
             >
-              <Image src={src} alt="" fill className="object-cover" />
+              <Image src={src} alt="" fill unoptimized className="object-cover" />
             </div>
           ))}
         </div>
