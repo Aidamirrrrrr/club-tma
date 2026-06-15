@@ -45,9 +45,9 @@ export async function POST(
     if (!(file.type in ALLOWED_IMAGE_TYPES)) {
       return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "File too large (max 5MB)" },
+        { error: "File too large (max 10MB)" },
         { status: 400 },
       );
     }
