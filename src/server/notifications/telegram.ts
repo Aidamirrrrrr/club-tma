@@ -10,6 +10,10 @@ const TELEGRAM_API_BASE =
 
 interface TelegramSendMessageOptions {
   replyMarkup?: Record<string, unknown>;
+  // По умолчанию (undefined) — "HTML". Передайте null, чтобы отправить как
+  // обычный текст (нужно для произвольного текста админа, где символы <, &
+  // ломают HTML-разбор Telegram).
+  parseMode?: "HTML" | "MarkdownV2" | null;
 }
 
 function getMiniAppUrl(): string | null {
@@ -45,58 +49,170 @@ export function getTelegramMiniAppLaunchMarkup(): Record<
   };
 }
 
-/** Отправляет сообщение через Telegram Bot API. */
+/** Отправляет сообщение через Telegram Bot API. Возвращает true при успехе. */
 export async function sendTelegramMessage(
   chatId: string,
   text: string,
   options: TelegramSendMessageOptions = {},
-) {
+): Promise<boolean> {
   if (!BOT_TOKEN) {
     console.log("[notify skip] No BOT_TOKEN");
-    return;
+    return false;
   }
 
+  const parseMode =
+    options.parseMode === undefined ? "HTML" : options.parseMode;
+
   try {
-    const res = await fetch(
-      `${TELEGRAM_API_BASE}/bot${BOT_TOKEN}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text,
-          parse_mode: "HTML",
-          reply_markup: options.replyMarkup,
-        }),
-      },
-    );
+    const res = await fetch(`${TELEGRAM_API_BASE}/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: parseMode ?? undefined,
+        reply_markup: options.replyMarkup,
+      }),
+    });
 
     if (!res.ok) {
       const err = await res.text();
       console.error(`[notify error] ${err}`);
     }
+    return res.ok;
+  } catch (error) {
+    console.error("[notify error]", error);
+    return false;
+  }
+}
+
+/** Отправляет фото (по file_id) с подписью через Telegram Bot API. */
+export async function sendTelegramPhoto(
+  chatId: string,
+  photoFileId: string,
+  caption = "",
+  options: TelegramSendMessageOptions = {},
+): Promise<boolean> {
+  if (!BOT_TOKEN) {
+    console.log("[notify skip] No BOT_TOKEN");
+    return false;
+  }
+
+  const parseMode =
+    options.parseMode === undefined ? "HTML" : options.parseMode;
+
+  try {
+    const res = await fetch(`${TELEGRAM_API_BASE}/bot${BOT_TOKEN}/sendPhoto`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        photo: photoFileId,
+        caption: caption || undefined,
+        parse_mode: parseMode ?? undefined,
+        reply_markup: options.replyMarkup,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      console.error(`[notify error] ${err}`);
+    }
+    return res.ok;
+  } catch (error) {
+    console.error("[notify error]", error);
+    return false;
+  }
+}
+
+/** Отвечает на callback_query (убирает «часики» на нажатой кнопке). */
+export async function answerTelegramCallback(
+  callbackQueryId: string,
+  text?: string,
+): Promise<void> {
+  if (!BOT_TOKEN) return;
+  try {
+    await fetch(
+      `${TELEGRAM_API_BASE}/bot${BOT_TOKEN}/answerCallbackQuery`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callback_query_id: callbackQueryId, text }),
+      },
+    );
   } catch (error) {
     console.error("[notify error]", error);
   }
 }
 
-/** Рассылает сообщение всем не заблокированным пользователям бота. */
+interface BroadcastContent {
+  text: string;
+  photoFileId?: string;
+  replyMarkup?: Record<string, unknown>;
+  parseMode?: "HTML" | "MarkdownV2" | null;
+}
+
+/**
+ * Отправляет одну «единицу» рассылки одному чату — фото с подписью или текст.
+ * Если есть фото и текст длиннее лимита подписи (1024), шлёт фото отдельно,
+ * затем текст. Используется и для превью, и для самой рассылки — поэтому
+ * превью выглядит ровно так же, как получат пользователи.
+ */
+export async function sendBroadcastUnit(
+  chatId: string,
+  content: BroadcastContent,
+): Promise<boolean> {
+  const { text, photoFileId, replyMarkup, parseMode } = content;
+
+  if (photoFileId) {
+    if (text.length <= 1024) {
+      return sendTelegramPhoto(chatId, photoFileId, text, {
+        replyMarkup,
+        parseMode,
+      });
+    }
+    const okPhoto = await sendTelegramPhoto(chatId, photoFileId, "", {
+      parseMode,
+    });
+    const okText = await sendTelegramMessage(chatId, text, {
+      replyMarkup,
+      parseMode,
+    });
+    return okPhoto && okText;
+  }
+
+  return sendTelegramMessage(chatId, text, { replyMarkup, parseMode });
+}
+
+/**
+ * Рассылает сообщение (текст и/или фото) всем не заблокированным пользователям.
+ * Возвращает счётчики доставки. Недоставка одному адресату (403 «бот заблокирован»,
+ * 429 и т.п.) не рвёт всю рассылку. При текущем объёме (~десятки) троттлинг не нужен.
+ */
 export async function broadcastToUsers(
   text: string,
-  options: TelegramSendMessageOptions = {},
-) {
+  options: TelegramSendMessageOptions & { photoFileId?: string } = {},
+): Promise<{ sent: number; failed: number }> {
   const users = await db.user.findMany({
     where: { blocked: false },
     select: { telegramId: true },
   });
 
+  let sent = 0;
+  let failed = 0;
   for (const user of users) {
     if (!user.telegramId) continue;
-    // sendTelegramMessage сам логирует и проглатывает ошибки (403 «бот заблокирован
-    // пользователем», 429 и т.п.), поэтому один недоставленный адресат не рвёт
-    // всю рассылку. При текущем объёме (~десятки) троттлинг не нужен.
-    await sendTelegramMessage(user.telegramId, text, options);
+    const ok = await sendBroadcastUnit(user.telegramId, {
+      text,
+      photoFileId: options.photoFileId,
+      replyMarkup: options.replyMarkup,
+      parseMode: options.parseMode,
+    });
+    if (ok) sent++;
+    else failed++;
   }
+
+  return { sent, failed };
 }
 
 /** Уведомляет всех пользователей бота о создании нового мероприятия. */

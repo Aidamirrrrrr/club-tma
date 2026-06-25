@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import {
+  type BroadcastUpdate,
+  handleBroadcastUpdate,
+} from "@/server/notifications/broadcast";
+import {
   getTelegramMiniAppLaunchMarkup,
   sendTelegramMessage,
 } from "@/server/notifications/telegram";
@@ -41,7 +45,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const update = (await request.json()) as TelegramWebhookUpdate;
+    const update = (await request.json()) as TelegramWebhookUpdate &
+      BroadcastUpdate;
+
+    // Сначала пробуем обработать сценарий рассылки (/broadcast, шаги, кнопки).
+    // Если он «поглотил» апдейт — дальше ничего не делаем.
+    if (await handleBroadcastUpdate(update)) {
+      return NextResponse.json({ ok: true });
+    }
+
     const message = update.message;
     const chatId = message?.chat?.id;
 

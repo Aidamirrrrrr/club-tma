@@ -219,7 +219,7 @@ jobs:
             if [ -n "$WEBHOOK_URL" ] && [ -n "$TELEGRAM_WEBHOOK_SECRET_VALUE" ]; then
               curl -fsS -X POST "$TG_API/bot${{ secrets.BOT_TOKEN }}/setWebhook" \
                 -H "Content-Type: application/json" \
-                -d "{\"url\":\"$WEBHOOK_URL\",\"secret_token\":\"$TELEGRAM_WEBHOOK_SECRET_VALUE\",\"allowed_updates\":[\"message\"]}"
+                -d "{\"url\":\"$WEBHOOK_URL\",\"secret_token\":\"$TELEGRAM_WEBHOOK_SECRET_VALUE\",\"allowed_updates\":[\"message\",\"callback_query\"]}"
             else
               echo "Skip Telegram webhook setup: webhook URL is not configured."
             fi
