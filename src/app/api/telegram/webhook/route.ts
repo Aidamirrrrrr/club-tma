@@ -1,11 +1,20 @@
 import { NextResponse } from "next/server";
+import { db } from "@/db";
 import {
   getTelegramMiniAppLaunchMarkup,
   sendTelegramMessage,
 } from "@/server/notifications/telegram";
 
+interface TelegramWebhookFrom {
+  id?: number;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+}
+
 interface TelegramWebhookMessage {
   chat?: { id?: number | string };
+  from?: TelegramWebhookFrom;
   text?: string;
 }
 
@@ -38,6 +47,25 @@ export async function POST(request: Request) {
 
     if (!message || !chatId || !isStartCommand(message.text)) {
       return NextResponse.json({ ok: true });
+    }
+
+    // Сохраняем пользователя, запустившего бота, чтобы он попадал в рассылки
+    // (даже если ещё ни разу не открывал мини-приложение). Существующий профиль
+    // не перезаписываем — пользователь мог отредактировать его в приложении.
+    const from = message.from;
+    if (from?.id) {
+      await db.user
+        .upsert({
+          where: { telegramId: String(from.id) },
+          update: {},
+          create: {
+            telegramId: String(from.id),
+            firstName: from.first_name || "",
+            lastName: from.last_name || "",
+            username: from.username || "",
+          },
+        })
+        .catch((error) => console.error("User upsert on /start failed:", error));
     }
 
     const replyMarkup = getTelegramMiniAppLaunchMarkup();

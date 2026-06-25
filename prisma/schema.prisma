@@ -24,6 +24,11 @@ enum CommunityRequestStatus {
     reviewed
 }
 
+enum LoyaltyStatus {
+    active
+    hidden
+}
+
 model User {
     id              Int      @id @default(autoincrement())
     telegramId      String   @unique @map("telegram_id")
@@ -41,9 +46,10 @@ model User {
     blocked         Boolean  @default(false)
     createdAt       DateTime @default(now()) @map("created_at")
 
-    registrations     Registration[]
-    createdEvents     Event[]            @relation("CreatedEvents")
-    communityRequests CommunityRequest[]
+    registrations       Registration[]
+    createdEvents       Event[]            @relation("CreatedEvents")
+    communityRequests   CommunityRequest[]
+    createdLoyaltyOffers LoyaltyOffer[]    @relation("CreatedLoyaltyOffers")
 
     @@map("users")
 }
@@ -110,4 +116,20 @@ model Chat {
     createdAt   DateTime @default(now()) @map("created_at")
 
     @@map("chats")
+}
+
+model LoyaltyOffer {
+    id            Int           @id @default(autoincrement())
+    title         String
+    discountLabel String        @default("") @map("discount_label")
+    coverUrl      String?       @map("cover_url")
+    logoUrl       String?       @map("logo_url")
+    qrUrl         String?       @map("qr_url")
+    status        LoyaltyStatus @default(active)
+    createdBy     Int?          @map("created_by")
+    createdAt     DateTime      @default(now()) @map("created_at")
+
+    creator User? @relation("CreatedLoyaltyOffers", fields: [createdBy], references: [id])
+
+    @@map("loyalty_offers")
 }

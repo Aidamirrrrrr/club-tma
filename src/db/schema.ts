@@ -5,6 +5,7 @@ export type {
   Chat,
   CommunityRequest,
   Event,
+  LoyaltyOffer,
   Registration,
   User,
 } from "@/generated/prisma/client";
@@ -12,5 +13,6 @@ export type {
 export {
   CommunityRequestStatus,
   EventStatus,
+  LoyaltyStatus,
   UserRole,
 } from "@/generated/prisma/client";

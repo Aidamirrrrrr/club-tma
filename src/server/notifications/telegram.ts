@@ -80,26 +80,37 @@ export async function sendTelegramMessage(
   }
 }
 
-/** Уведомляет администраторов о создании нового мероприятия. */
-export async function notifyNewEvent(event: Event) {
-  const admins = await db.user.findMany({
-    where: { role: "admin" },
+/** Рассылает сообщение всем не заблокированным пользователям бота. */
+export async function broadcastToUsers(
+  text: string,
+  options: TelegramSendMessageOptions = {},
+) {
+  const users = await db.user.findMany({
+    where: { blocked: false },
+    select: { telegramId: true },
   });
 
+  for (const user of users) {
+    if (!user.telegramId) continue;
+    // sendTelegramMessage сам логирует и проглатывает ошибки (403 «бот заблокирован
+    // пользователем», 429 и т.п.), поэтому один недоставленный адресат не рвёт
+    // всю рассылку. При текущем объёме (~десятки) троттлинг не нужен.
+    await sendTelegramMessage(user.telegramId, text, options);
+  }
+}
+
+/** Уведомляет всех пользователей бота о создании нового мероприятия. */
+export async function notifyNewEvent(event: Event) {
   const msg =
-    `🎉 <b>Новое мероприятие</b>\n\n` +
+    `🎉 <b>Новое мероприятие!</b>\n\n` +
     `<b>${event.title}</b>\n` +
     `📅 ${event.date}${event.time ? ` в ${event.time}` : ""}\n` +
-    `📍 ${event.location || "Не указано"}\n` +
-    (event.maxParticipants
-      ? `👥 Макс. участников: ${event.maxParticipants}\n`
-      : "");
+    `📍 ${event.location || "Уточняется"}\n\n` +
+    `Открой приложение, чтобы записаться 👇`;
 
-  await Promise.allSettled(
-    admins
-      .filter((admin) => admin.telegramId)
-      .map((admin) => sendTelegramMessage(admin.telegramId, msg)),
-  );
+  await broadcastToUsers(msg, {
+    replyMarkup: getTelegramMiniAppLaunchMarkup() ?? undefined,
+  });
 }
 
 /** Уведомляет пользователя об успешной регистрации на мероприятие. */
