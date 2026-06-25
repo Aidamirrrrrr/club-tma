@@ -196,7 +196,7 @@ jobs:
               -v "$PWD/prisma.config.ts:/workspace/prisma.config.ts:ro" \
               -w /workspace \
               node:22-alpine \
-              sh -c "set -e && npm init -y >/dev/null 2>&1 && npm install --no-package-lock prisma@7 dotenv >/dev/null 2>&1 && npx prisma db push --schema=prisma/schema.prisma --skip-generate"
+              sh -c "set -ex && npm init -y >/dev/null 2>&1 && npm install --no-package-lock --no-audit --no-fund --fetch-retries=5 --fetch-retry-maxtimeout=120000 prisma@7 dotenv && npx prisma db push --schema=prisma/schema.prisma --skip-generate"
 
             # Configure Telegram webhook automatically.
             # На проде в РФ Telegram не может доставлять вебхук напрямую на сервер
