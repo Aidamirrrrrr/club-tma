@@ -185,14 +185,6 @@ jobs:
             $COMPOSE pull app
             $COMPOSE up -d
 
-            # Init SSL if certificate doesn't exist yet
-            if [ -n "$DOMAIN" ] && [ -n "$EMAIL" ]; then
-              if ! $COMPOSE run --rm --no-deps --entrypoint sh certbot -c "test -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem"; then
-                chmod +x scripts/deploy/init-letsencrypt.sh
-                bash scripts/deploy/init-letsencrypt.sh "$DOMAIN" "$EMAIL"
-              fi
-            fi
-
             # Run migrations
             $DOCKER run --rm \
               --network club_default \
@@ -228,6 +220,21 @@ jobs:
                 -d "{\"url\":\"$WEBHOOK_URL\",\"secret_token\":\"$TELEGRAM_WEBHOOK_SECRET_VALUE\",\"allowed_updates\":[\"message\"]}"
             else
               echo "Skip Telegram webhook setup: webhook URL is not configured."
+            fi
+
+            # Init SSL only on first provisioning (cert missing). Сертификат продлевает
+            # постоянный сервис certbot, поэтому здесь шаг не должен ронять деплой —
+            # любые сбои (сеть до Let's Encrypt и т.п.) не критичны для уже выданного
+            # сертификата. Выполняется ПОСЛЕ миграций и вебхука, чтобы их не блокировать.
+            if [ -n "$DOMAIN" ] && [ -n "$EMAIL" ]; then
+              if $COMPOSE run --rm --no-deps --entrypoint sh certbot -c "test -f /etc/letsencrypt/live/$DOMAIN/fullchain.pem"; then
+                echo "SSL certificate already present — skipping init."
+              else
+                echo "SSL certificate missing — attempting init (non-fatal)."
+                chmod +x scripts/deploy/init-letsencrypt.sh
+                bash scripts/deploy/init-letsencrypt.sh "$DOMAIN" "$EMAIL" \
+                  || echo "WARNING: SSL init failed; continuing (existing cert, if any, still served)."
+              fi
             fi
 
             # Cleanup old images
