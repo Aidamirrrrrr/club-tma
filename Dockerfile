@@ -38,6 +38,14 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
+# Prisma CLI + движки, чтобы применять миграции прямо из этого образа на сервере.
+# Прод-сервер (РФ) не достаёт до registry.npmjs.org, поэтому ставить prisma на
+# каждом деплое нельзя — ставим глобально на этапе сборки (раннер GitHub, сеть
+# есть), движки запекаются в образ. dotenv нужен для prisma.config.ts.
+RUN npm install -g prisma@7.5.0 dotenv
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+
 # Ensure cache and uploads directories are writable
 RUN mkdir -p .next/cache public/uploads \
     && chown -R nextjs:nodejs .next public/uploads

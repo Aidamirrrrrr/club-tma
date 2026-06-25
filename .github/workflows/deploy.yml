@@ -187,17 +187,15 @@ jobs:
             $COMPOSE pull app
             $COMPOSE up -d
 
-            # Run migrations (verbose, fail loudly if push errors)
-            echo "Модели в схеме, дошедшей до сервера:"
-            grep -E '^[[:space:]]*model ' prisma/schema.prisma || true
+            # Run migrations прямо из собранного образа (prisma запечена внутрь).
+            # Никакого npm install на сервере — РФ-сеть не достаёт до npmjs.org.
             $DOCKER run --rm \
               --network club_default \
               --env-file .env \
-              -v "$PWD/prisma/schema.prisma:/workspace/prisma/schema.prisma:ro" \
-              -v "$PWD/prisma.config.ts:/workspace/prisma.config.ts:ro" \
-              -w /workspace \
-              node:22-alpine \
-              sh -c "set -ex && npm init -y >/dev/null 2>&1 && npm install --no-package-lock --no-audit --no-fund --fetch-retries=5 --fetch-retry-maxtimeout=120000 prisma@7 dotenv && npx prisma db push --schema=prisma/schema.prisma --skip-generate"
+              --user 0 \
+              --entrypoint sh \
+              "$IMAGE" \
+              -c "set -e; cd /app; echo 'Модели в схеме (из образа):'; grep -E '^[[:space:]]*model ' prisma/schema.prisma; NODE_PATH=/usr/local/lib/node_modules prisma db push --schema=prisma/schema.prisma --skip-generate"
 
             # Configure Telegram webhook automatically.
             # На проде в РФ Telegram не может доставлять вебхук напрямую на сервер
