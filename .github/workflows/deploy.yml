@@ -195,7 +195,7 @@ jobs:
               --user 0 \
               --entrypoint sh \
               "$IMAGE" \
-              -c "set -e; cd /app; echo 'Модели в схеме (из образа):'; grep -E '^[[:space:]]*model ' prisma/schema.prisma; NODE_PATH=/usr/local/lib/node_modules prisma db push --schema=prisma/schema.prisma --skip-generate"
+              -c "set -e; cd /app; echo 'Модели в схеме (из образа):'; grep -E '^[[:space:]]*model ' prisma/schema.prisma; NODE_PATH=/usr/local/lib/node_modules prisma db push --schema=prisma/schema.prisma"
 
             # Configure Telegram webhook automatically.
             # На проде в РФ Telegram не может доставлять вебхук напрямую на сервер
