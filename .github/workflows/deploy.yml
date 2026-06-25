@@ -151,6 +151,7 @@ jobs:
             DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER || 'club' }}:${{ secrets.POSTGRES_PASSWORD }}@db:5432/${{ secrets.POSTGRES_DB || 'club' }}
             BOT_TOKEN=${{ secrets.BOT_TOKEN }}
             TELEGRAM_WEBHOOK_SECRET=$TELEGRAM_WEBHOOK_SECRET_VALUE
+            TELEGRAM_API_BASE=${{ secrets.TELEGRAM_API_BASE }}
             APP_URL=$APP_URL_VALUE
             DOMAIN=${{ secrets.DOMAIN }}
             EMAIL=${{ secrets.EMAIL }}
@@ -202,22 +203,31 @@ jobs:
               node:22-alpine \
               sh -c "npm init -y >/dev/null 2>&1 && npm install --no-package-lock prisma dotenv >/dev/null 2>&1 && npx prisma db push --schema=prisma/schema.prisma"
 
-            # Configure Telegram webhook automatically
-            if [ -n "$APP_URL_VALUE" ]; then
-              WEBHOOK_BASE_URL=${APP_URL_VALUE%/}
+            # Configure Telegram webhook automatically.
+            # На проде в РФ Telegram не может доставлять вебхук напрямую на сервер
+            # (подсети Telegram заблокированы), поэтому вебхук ставим на Cloudflare
+            # Worker-прокси (secrets.TELEGRAM_WEBHOOK_URL). Worker форвардит апдейты
+            # на /api/telegram/webhook. Если секрет не задан — старое поведение.
+            if [ -n "${{ secrets.TELEGRAM_WEBHOOK_URL }}" ]; then
+              WEBHOOK_URL="${{ secrets.TELEGRAM_WEBHOOK_URL }}"
+            elif [ -n "$APP_URL_VALUE" ]; then
+              WEBHOOK_URL="${APP_URL_VALUE%/}/api/telegram/webhook"
             elif [ -n "$DOMAIN" ]; then
-              WEBHOOK_BASE_URL="https://$DOMAIN"
+              WEBHOOK_URL="https://$DOMAIN/api/telegram/webhook"
             else
-              WEBHOOK_BASE_URL=""
+              WEBHOOK_URL=""
             fi
 
-            if [ -n "$WEBHOOK_BASE_URL" ] && [ -n "$TELEGRAM_WEBHOOK_SECRET_VALUE" ]; then
-              WEBHOOK_URL="$WEBHOOK_BASE_URL/api/telegram/webhook"
-              curl -fsS -X POST "https://api.telegram.org/bot${{ secrets.BOT_TOKEN }}/setWebhook" \
+            # setWebhook вызываем через TELEGRAM_API_BASE (тот же прокси), т.к. прямой
+            # доступ к api.telegram.org с сервера тоже может быть заблокирован.
+            TG_API="${{ secrets.TELEGRAM_API_BASE }}"
+            TG_API="${TG_API:-https://api.telegram.org}"
+            if [ -n "$WEBHOOK_URL" ] && [ -n "$TELEGRAM_WEBHOOK_SECRET_VALUE" ]; then
+              curl -fsS -X POST "$TG_API/bot${{ secrets.BOT_TOKEN }}/setWebhook" \
                 -H "Content-Type: application/json" \
                 -d "{\"url\":\"$WEBHOOK_URL\",\"secret_token\":\"$TELEGRAM_WEBHOOK_SECRET_VALUE\",\"allowed_updates\":[\"message\"]}"
             else
-              echo "Skip Telegram webhook setup: APP_URL/DOMAIN is not configured."
+              echo "Skip Telegram webhook setup: webhook URL is not configured."
             fi
 
             # Cleanup old images

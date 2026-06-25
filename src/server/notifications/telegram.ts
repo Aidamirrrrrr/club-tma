@@ -3,6 +3,10 @@ import { db } from "@/db";
 import type { Event, User } from "@/db/schema";
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
+// Базовый URL Telegram API. На проде в РФ указываем Cloudflare Worker-прокси
+// (api.telegram.org доступен не из всех сетей), по умолчанию — прямой адрес.
+const TELEGRAM_API_BASE =
+  process.env.TELEGRAM_API_BASE || "https://api.telegram.org";
 
 interface TelegramSendMessageOptions {
   replyMarkup?: Record<string, unknown>;
@@ -54,7 +58,7 @@ export async function sendTelegramMessage(
 
   try {
     const res = await fetch(
-      `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+      `${TELEGRAM_API_BASE}/bot${BOT_TOKEN}/sendMessage`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
