@@ -2,8 +2,10 @@ import { db } from "@/db";
 import {
   answerTelegramCallback,
   broadcastToUsers,
+  getOpenAppMarkup,
   sendBroadcastUnit,
   sendTelegramMessage,
+  type TelegramMessageEntity,
 } from "@/server/notifications/telegram";
 
 // Разговорный сценарий рассылки внутри бота (только для админов):
@@ -21,6 +23,8 @@ interface Draft {
   step: Step;
   text: string;
   photoFileId?: string;
+  // Форматирование текста, как его прислал админ (жирный, курсив и т.д.).
+  entities?: TelegramMessageEntity[];
 }
 
 const drafts = new Map<number, Draft>();
@@ -49,6 +53,7 @@ interface TgMessage {
   chat?: TgChat;
   from?: TgFrom;
   text?: string;
+  entities?: TelegramMessageEntity[];
   photo?: TgPhotoSize[];
 }
 interface TgCallbackQuery {
@@ -70,16 +75,17 @@ async function isAdminTelegram(telegramId: string): Promise<boolean> {
   return user?.role === "admin";
 }
 
-/** Шлёт превью рассылки (как увидят пользователи) с кнопками подтверждения. */
+/** Шлёт превью рассылки (ровно как увидят пользователи) + кнопки подтверждения. */
 async function sendPreview(chatId: string, draft: Draft): Promise<void> {
-  await sendTelegramMessage(
-    chatId,
-    "👇 Так будет выглядеть рассылка. Проверьте и подтвердите:",
-  );
+  await sendTelegramMessage(chatId, "👇 Так будет выглядеть рассылка:");
   await sendBroadcastUnit(chatId, {
     text: draft.text,
     photoFileId: draft.photoFileId,
     parseMode: null,
+    entities: draft.entities,
+    replyMarkup: getOpenAppMarkup() ?? undefined,
+  });
+  await sendTelegramMessage(chatId, "Проверьте и подтвердите:", {
     replyMarkup: confirmKeyboard,
   });
 }
@@ -134,6 +140,8 @@ async function handleCallback(cq: TgCallbackQuery): Promise<boolean> {
     const { sent, failed } = await broadcastToUsers(draft.text, {
       photoFileId: draft.photoFileId,
       parseMode: null,
+      entities: draft.entities,
+      replyMarkup: getOpenAppMarkup() ?? undefined,
     });
     await sendTelegramMessage(
       chatId,
@@ -195,6 +203,7 @@ export async function handleBroadcastUpdate(
       return true;
     }
     draft.text = text;
+    draft.entities = msg.entities;
     draft.step = "photo";
     await sendTelegramMessage(
       chatId,

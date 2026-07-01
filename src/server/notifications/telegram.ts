@@ -8,12 +8,26 @@ const BOT_TOKEN = process.env.BOT_TOKEN;
 const TELEGRAM_API_BASE =
   process.env.TELEGRAM_API_BASE || "https://api.telegram.org";
 
+// Форматирование (жирный, курсив, ссылки и т.д.), которое Telegram присылает
+// отдельно от текста сообщения. Пробрасываем как есть, чтобы рассылка выглядела
+// ровно так, как ввёл админ. При наличии entities parse_mode не используется.
+export interface TelegramMessageEntity {
+  type: string;
+  offset: number;
+  length: number;
+  url?: string;
+  language?: string;
+  custom_emoji_id?: string;
+}
+
 interface TelegramSendMessageOptions {
   replyMarkup?: Record<string, unknown>;
   // По умолчанию (undefined) — "HTML". Передайте null, чтобы отправить как
   // обычный текст (нужно для произвольного текста админа, где символы <, &
   // ломают HTML-разбор Telegram).
   parseMode?: "HTML" | "MarkdownV2" | null;
+  // Явные сущности форматирования. Если заданы — parse_mode игнорируется.
+  entities?: TelegramMessageEntity[];
 }
 
 function getMiniAppUrl(): string | null {
@@ -49,6 +63,23 @@ export function getTelegramMiniAppLaunchMarkup(): Record<
   };
 }
 
+/** Кнопка «Открыть приложение» для рассылки (открывает mini-app). */
+export function getOpenAppMarkup(): Record<string, unknown> | null {
+  const miniAppUrl = getMiniAppUrl();
+  if (!miniAppUrl) return null;
+
+  return {
+    inline_keyboard: [
+      [
+        {
+          text: "Открыть приложение",
+          web_app: { url: miniAppUrl },
+        },
+      ],
+    ],
+  };
+}
+
 /** Отправляет сообщение через Telegram Bot API. Возвращает true при успехе. */
 export async function sendTelegramMessage(
   chatId: string,
@@ -70,7 +101,9 @@ export async function sendTelegramMessage(
       body: JSON.stringify({
         chat_id: chatId,
         text,
-        parse_mode: parseMode ?? undefined,
+        // entities и parse_mode взаимоисключающи: если есть entities, разбор не нужен.
+        parse_mode: options.entities ? undefined : parseMode ?? undefined,
+        entities: options.entities,
         reply_markup: options.replyMarkup,
       }),
     });
@@ -109,7 +142,9 @@ export async function sendTelegramPhoto(
         chat_id: chatId,
         photo: photoFileId,
         caption: caption || undefined,
-        parse_mode: parseMode ?? undefined,
+        // Для фото форматирование подписи передаётся как caption_entities.
+        parse_mode: options.entities ? undefined : parseMode ?? undefined,
+        caption_entities: caption ? options.entities : undefined,
         reply_markup: options.replyMarkup,
       }),
     });
@@ -150,6 +185,7 @@ interface BroadcastContent {
   photoFileId?: string;
   replyMarkup?: Record<string, unknown>;
   parseMode?: "HTML" | "MarkdownV2" | null;
+  entities?: TelegramMessageEntity[];
 }
 
 /**
@@ -162,13 +198,14 @@ export async function sendBroadcastUnit(
   chatId: string,
   content: BroadcastContent,
 ): Promise<boolean> {
-  const { text, photoFileId, replyMarkup, parseMode } = content;
+  const { text, photoFileId, replyMarkup, parseMode, entities } = content;
 
   if (photoFileId) {
     if (text.length <= 1024) {
       return sendTelegramPhoto(chatId, photoFileId, text, {
         replyMarkup,
         parseMode,
+        entities,
       });
     }
     const okPhoto = await sendTelegramPhoto(chatId, photoFileId, "", {
@@ -177,11 +214,12 @@ export async function sendBroadcastUnit(
     const okText = await sendTelegramMessage(chatId, text, {
       replyMarkup,
       parseMode,
+      entities,
     });
     return okPhoto && okText;
   }
 
-  return sendTelegramMessage(chatId, text, { replyMarkup, parseMode });
+  return sendTelegramMessage(chatId, text, { replyMarkup, parseMode, entities });
 }
 
 /**
@@ -207,6 +245,7 @@ export async function broadcastToUsers(
       photoFileId: options.photoFileId,
       replyMarkup: options.replyMarkup,
       parseMode: options.parseMode,
+      entities: options.entities,
     });
     if (ok) sent++;
     else failed++;
